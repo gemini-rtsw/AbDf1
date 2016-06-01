@@ -1,0 +1,10 @@
+# Allen Bradley DF1 Device Support
+device( ai,   INST_IO, devAiAbDf1,   "AB DF1 serial" )
+device( ao,   INST_IO, devAoAbDf1,   "AB DF1 serial" )
+device( bi,   INST_IO, devBiAbDf1,   "AB DF1 serial" )
+device( bo,   INST_IO, devBoAbDf1,   "AB DF1 serial" )
+device( mbbi, INST_IO, devMbbiAbDf1, "AB DF1 serial" )
+device( mbbo, INST_IO, devMbboAbDf1, "AB DF1 serial" )
+
+# Allen Bradley Driver Support
+driver( drvAbDf1  )
