@@ -8,6 +8,8 @@
  *------------------------------------------------------------------------
  * MODIFICATION LOG:
  *
+ * 06-Jun-2016 mdw      Modified to use <epicsTypes.h> instead of <sys/types.h>
+ *                      Fixed up funtion pointer typdefs
  * 17-Oct-1997 joh,bjo  Re-structured for use with shared device-support
  *
  *------------------------------------------------------------------------
@@ -59,9 +61,9 @@
  * hardware address specified in the record.  The routines found in the
  * Driver-Support Function Table are:
  *
- * o NewElemIO	   - Allocate and clear an element IO structure. Driver is
- *					 embed the element IO structure within a
- *					 larger driver specific structure.
+ * o NewElemIO      - Allocate and clear an element IO structure. Driver is
+ *                embed the element IO structure within a
+ *                larger driver specific structure.
  *
  * o SetupIO       - Called by the device support "Init Record" routine to
  *                   parse the hardware address information and initialize
@@ -85,7 +87,7 @@
  *                   routines.
  *
  * o ReadWord      - Reads current value from the cache.  Returns unsigned
- *                   word value (uint16_t).  Note that the data type in the
+ *                   word value (epicsUInt16).  Note that the data type in the
  *                   value union should match the data type flag in the element
  *                   io structure.
  * 
@@ -127,8 +129,7 @@
 /*  Other Files Included By this Header                                      */
 /*****************************************************************************/
 
-#include        <sys/types.h>  /* Architecture-independent type definitions  */
-
+#include        <epicsTypes.h> /* Architecture-independent type definitions  */
 #include        <dbScan.h>     /* EPICS database scan definitions            */
 #include        <errMdef.h>    /* EPICS error message module definitions     */
 #include        <link.h>       /* EPICS Database link structure definitions  */
@@ -149,12 +150,12 @@ typedef struct  drvAbDf1FuncTable       drvAbDf1FuncTable;
 /*
  * Function Type Declarations
  */
-typedef void devAbDf1WriteCompletionFunc (abDf1ElemIO*, long);
-typedef void devAbDf1NewCacheValueFunc (abDf1ElemIO *);
-typedef void devAbDf1CurrentWriteValueFunc (abDf1ElemIO*, abDf1Value*);
-typedef long devAbDf1ParseAddressFunc (const char *address, int *fileType, int *dataType, 
-				int *fileNumber, int *element, int *subelement, int *bitNum, 
-				int *elementSize, int *structured);
+typedef void (*devAbDf1WriteCompletionFunc) (abDf1ElemIO*, long);
+typedef void (*devAbDf1NewCacheValueFunc) (abDf1ElemIO *);
+typedef void (*devAbDf1CurrentWriteValueFunc) (abDf1ElemIO*, abDf1Value*);
+typedef long (*devAbDf1ParseAddressFunc) (const char *address, int *fileType, int *dataType, 
+            int *fileNumber, int *element, int *subelement, int *bitNum, 
+            int *elementSize, int *structured);
 
 /* 
  * drvAbDf1NewElemIOFunc must initialize (or at least clear) 
@@ -162,14 +163,14 @@ typedef long devAbDf1ParseAddressFunc (const char *address, int *fileType, int *
  * (this allows the driver to add a driver specific
  * preamble to the element IO structure)
  */
-typedef abDf1ElemIO *drvAbDf1NewElemIOFunc (void); 
-typedef void drvAbDf1InitiateAllFunc (void);
-typedef long drvAbDf1SetupIOFunc (const struct link *, abDf1ElemIO*, unsigned *pBitNo);
-typedef void drvAbDf1SetupScanFunc (const int cmd, abDf1ElemIO *);
-typedef long drvAbDf1InitiateWriteFunc (abDf1ElemIO *);
-typedef long drvAbDf1ReadWordFunc (abDf1ElemIO *, uint16_t *pVal);
-typedef long drvAbDf1ReadBitStringFunc (abDf1ElemIO*, uint16_t mask, uint16_t *pVal);
-typedef long drvAbDf1ReadRealFunc (abDf1ElemIO *, float *pVal);
+typedef abDf1ElemIO *(*drvAbDf1NewElemIOFunc) (void); 
+typedef void (*drvAbDf1InitiateAllFunc) (void);
+typedef epicsInt32 (*drvAbDf1SetupIOFunc) (const struct link *, abDf1ElemIO*, unsigned *pBitNo);
+typedef void (*drvAbDf1SetupScanFunc) (const int cmd, abDf1ElemIO *);
+typedef epicsInt32 (*drvAbDf1InitiateWriteFunc) (abDf1ElemIO *);
+typedef epicsInt32 (*drvAbDf1ReadWordFunc) (abDf1ElemIO *, epicsUInt16 *pVal);
+typedef epicsInt32 (*drvAbDf1ReadBitStringFunc) (abDf1ElemIO*, epicsUInt16 mask, epicsUInt16 *pVal);
+typedef epicsInt32 (*drvAbDf1ReadRealFunc) (abDf1ElemIO *, float *pVal);
 
 /*
  * Other Type Definitions
@@ -188,34 +189,34 @@ typedef void *drvAbDf1CacheId;  /* Pointer to cache structure                */
  * Device-Support Function Table
  */
 struct devAbDf1FuncTable {
-   devAbDf1WriteCompletionFunc   *pWriteCompletion;
-   devAbDf1NewCacheValueFunc     *pNewCacheValue;
-   devAbDf1CurrentWriteValueFunc *pCurrentWriteValue;
-   devAbDf1ParseAddressFunc      *pParseAddress;
+   devAbDf1WriteCompletionFunc   pWriteCompletion;
+   devAbDf1NewCacheValueFunc     pNewCacheValue;
+   devAbDf1CurrentWriteValueFunc pCurrentWriteValue;
+   devAbDf1ParseAddressFunc      pParseAddress;
 };
 
 /*
  * Driver-Support Function Table
  */
 struct drvAbDf1FuncTable {
-   drvAbDf1NewElemIOFunc       *NewElemIO;		/* allocate and clear elem IO structure */
-   drvAbDf1InitiateAllFunc     *InitiateAll;    /* Initiate All Links        */
-   drvAbDf1SetupIOFunc         *SetupIO;        /* Setup Element IO Struct   */
-   drvAbDf1SetupScanFunc       *SetupScan;      /* Setup "Scan on Interrupt" */
-   drvAbDf1InitiateWriteFunc   *InitiateWrite;  /* Start a write operation   */
-   drvAbDf1ReadWordFunc        *ReadWord;       /* Get 16-bit raw value      */
-   drvAbDf1ReadBitStringFunc   *ReadBitString;  /* Get bit-string value      */
-   drvAbDf1ReadRealFunc        *ReadReal;       /* Get IEEE float value      */
+   drvAbDf1NewElemIOFunc       NewElemIO;      /* allocate and clear elem IO structure */
+   drvAbDf1InitiateAllFunc     InitiateAll;    /* Initiate All Links        */
+   drvAbDf1SetupIOFunc         SetupIO;        /* Setup Element IO Struct   */
+   drvAbDf1SetupScanFunc       SetupScan;      /* Setup "Scan on Interrupt" */
+   drvAbDf1InitiateWriteFunc   InitiateWrite;  /* Start a write operation   */
+   drvAbDf1ReadWordFunc        ReadWord;       /* Get 16-bit raw value      */
+   drvAbDf1ReadBitStringFunc   ReadBitString;  /* Get bit-string value      */
+   drvAbDf1ReadRealFunc        ReadReal;       /* Get IEEE float value      */
 };
 
 /*
  * Structure for Holding Allen-Bradley DF-1 Element Values.
  */
 union abDf1Value{
-   uint16_t      word;    /* 16-bit raw value          */
+   epicsUInt16      word;    /* 16-bit raw value          */
    struct {               /* 16-bit bit string & mask  */
-      uint16_t   value; 
-      uint16_t   mask; 
+      epicsUInt16   value; 
+      epicsUInt16   mask; 
    } bitString;
    float         real;    /* Single-Precision IEEE floating point value */
 }; 
@@ -230,10 +231,10 @@ union abDf1Value{
 struct abDf1ElemIO {
 
    drvAbDf1FuncTable  *drvFunc;         /* Addr of driver function table (init by dev support)          */
-   devAbDf1FuncTable  *devFunc;			/* Addr of dev sup func table (init by dev support)             */
+   devAbDf1FuncTable  *devFunc;         /* Addr of dev sup func table (init by dev support)             */
    void               *pRec;            /* Addr of record (init by dev support)                         */
    IOSCANPVT           ioScanPvt;       /* IO event for asynch record processing (pvt to dev support)   */
-   uint8_t             dataType;        /* Data type of PV (init by drv support)                        */
+   epicsUInt8          dataType;        /* Data type of PV (init by drv support)                        */
 };
 
 
@@ -251,7 +252,7 @@ struct abDf1ElemIO {
 #define S_drvAbDf1_linkDown             (M_drvAbDf1 | 3)  /* serial link is down */
 #define S_drvAbDf1_noMemory             (M_drvAbDf1 | 4)  /* out of dynamic memory*/
 #define S_drvAbDf1_badFrame             (M_drvAbDf1 | 5)  /* corrupt input frame */
-#define S_drvAbDf1_mutexTMO				(M_drvAbDf1 | 6) /* timed out waiting for mutex lock  */
+#define S_drvAbDf1_mutexTMO            (M_drvAbDf1 | 6) /* timed out waiting for mutex lock  */
 #define S_drvAbDf1_notSubscribed        (M_drvAbDf1 | 9)  /* data point has not been subscribed */
 #define S_drvAbDf1_badNodeNumber        (M_drvAbDf1 | 10) /* invalid node number */
 #define S_drvAbDf1_xmitTMO              (M_drvAbDf1 | 11) /* frame timed out in request queue */

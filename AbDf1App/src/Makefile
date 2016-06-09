@@ -10,15 +10,14 @@ include $(TOP)/configure/CONFIG
 
 LIBRARY_IOC += AbDf1
 
-# xxxRecord.h will be created from xxxRecord.dbd
-#DBDINC += xxxRecord
-# install foo.dbd into <top>/dbd
 DBD += AbDf1.dbd
 
 # specify all source files to be compiled and added to the library
-#foo_SRCS += xxx
+AbDf1_SRCS += df1.c
+AbDf1_SRCS += drvAbDf1.c
+AbDf1_SRCS += devAbDf1.c
 
-foo_LIBS += $(EPICS_BASE_IOC_LIBS)
+AbDf1_LIBS += $(EPICS_BASE_IOC_LIBS)
 
 #===========================
 
