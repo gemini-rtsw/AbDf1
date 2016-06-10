@@ -51,11 +51,17 @@
 #include    <string.h>
 #include    <ctype.h>
 
+
+#if 0
 /*
  * VxWorks
  */
 #include    <symLib.h>
 #include    <sysSymTbl.h>
+#endif
+
+#define OK        0
+#define ERROR   (-1)
 
 /*
  * EPICS
@@ -70,16 +76,16 @@
 #include    <devSup.h>
 #include    <dbScan.h>
 #include    <link.h>
-#include    <module_types.h>
+//#include    <module_types.h>
 #include    <menuConvert.h>
 #include    <menuScan.h>
 #include    <devLib.h>
+#include    <recGbl.h>
 
 /*
  * DF-1 Protocol
  */
 #include    <devAbDf1.h>
-#define     INSTANTIATE_abDataTypeCvrt
 #include    <drvAbDf1.h>
 #include    <df1.h>
 
@@ -90,7 +96,7 @@
 /*
  * warning reminds us to remove this 
  */
-#define LOCAL
+//#define LOCAL
 
 #define S_devAbDf1_OK 0
 #define S_devAbDf1_dontConvert 2
@@ -114,10 +120,13 @@
 /*
  * Names of supported driver function tables
  */
+#if 0
+/* not needed if we don't have vxWorks symLib available */
 LOCAL const char  *funcTableName [MAX_DRIVERS] = {
     "_drvAbDf1Func",            /* Driver for Serial Port DF-1 Interface  */
     "_drvPlc5vFunc"             /* Driver for PLC-5/V VME card            */
 };
+
 
 /*
  * Names of supported drivers
@@ -126,6 +135,10 @@ LOCAL const char  *driverName [MAX_DRIVERS] = {
     "drvAbDf1.c",               /* Driver for Serial Port DF-1 Interface  */
     "drvPlc5v.c"                /* Driver for PLC-5/V VME card            */
 };
+#endif
+
+
+
 
 /*
  *Pointers to supported driver function tables
@@ -140,13 +153,13 @@ LOCAL drvAbDf1FuncTable  *funcTable [MAX_DRIVERS];
 LOCAL devInit          devInitAbDf1;
 LOCAL devGetIoIntInfo  devGetIoIntInfoAbDf1;
 
-LOCAL long             devAbDf1CommonInit (void*, const struct link*, int, abDf1ElemIO**, unsigned*);
+LOCAL epicsInt32       devAbDf1CommonInit (void*, const struct link*, int, abDf1ElemIO**, unsigned*);
 
 /*
  * Allen-Bradley Address Parsing Routines
  */
-LOCAL devAbDf1ParseAddressFunc  devAbParseAddress;
-LOCAL long                      devAbParseSymbol (const char*, int, int*, int*, int*); 
+LOCAL epicsInt32  devAbParseAddress(const char *, int*, int*, int*, int*, int*, int*, int*, int*);
+LOCAL epicsInt32  devAbParseSymbol (const char*, int, int*, int*, int*); 
 
 /*
  *   Analog Input Routines
@@ -158,27 +171,27 @@ LOCAL aiDevRead          aiDevReadFloatAbDf1;
 LOCAL aiDevLinearConv    aiDevLinearConvertAbDf1_12;
 LOCAL aiDevLinearConv    aiDevLinearConvertAbDf1_16;
 
-LOCAL devAbDf1NewCacheValueFunc aiDevAbDf1NewFloatValue;
-LOCAL devAbDf1NewCacheValueFunc aiDevAbDf1NewWordValue;
+LOCAL void aiDevAbDf1NewFloatValue(abDf1ElemIO *pIO);
+LOCAL void  aiDevAbDf1NewWordValue(abDf1ElemIO *pIO);
 
 /*
  *  Analog Output Routines
  */
-LOCAL long aoDevInitRecAbDf1 (struct aoRecord *pao, int signedValue);
+LOCAL epicsInt32 aoDevInitRecAbDf1 (struct aoRecord *pao, int signedValue);
 LOCAL aoDevInitRec       aoDevInitRecAbDf1Unsigned;
 LOCAL aoDevInitRec       aoDevInitRecAbDf1Signed;
 LOCAL aoDevWrite         aoDevWriteAbDf1;
 LOCAL aoDevLinearConv    aoDevLinearConvertAbDf1_12;
 LOCAL aoDevLinearConv    aoDevLinearConvertAbDf1_16;
 
-LOCAL void aoDevAbDf1NewValue (struct aoRecord *pao, double value, long status);
-LOCAL devAbDf1NewCacheValueFunc      aoDevAbDf1NewFloatValue;
-LOCAL devAbDf1NewCacheValueFunc      aoDevAbDf1NewSignedValue;
-LOCAL devAbDf1NewCacheValueFunc      aoDevAbDf1NewUnsignedValue;
+LOCAL void aoDevAbDf1NewValue (struct aoRecord *pao, double value, epicsInt32 status);
+LOCAL void aoDevAbDf1NewFloatValue(abDf1ElemIO *pIO);
+LOCAL void aoDevAbDf1NewSignedValue(abDf1ElemIO *pIO);
+LOCAL void aoDevAbDf1NewUnsignedValue(abDf1ElemIO *pIO);
 LOCAL void aoDevAbDf1NewWordValue (abDf1ElemIO *pIO, int signedValue);
-LOCAL devAbDf1WriteCompletionFunc    aoDevAbDf1WriteCompletion;
-LOCAL devAbDf1CurrentWriteValueFunc  aoDevAbDf1CurrentWordWriteVal;
-LOCAL devAbDf1CurrentWriteValueFunc  aoDevAbDf1CurrentFloatWriteVal;
+LOCAL void aoDevAbDf1WriteCompletion(abDf1ElemIO *pIO, epicsInt32 status);
+LOCAL void aoDevAbDf1CurrentWordWriteVal(abDf1ElemIO *pIO, abDf1Value *pVal);
+LOCAL void aoDevAbDf1CurrentFloatWriteVal(abDf1ElemIO *pIO, abDf1Value *pVal);
 
 /*
  * Binary Input Routines
@@ -186,7 +199,7 @@ LOCAL devAbDf1CurrentWriteValueFunc  aoDevAbDf1CurrentFloatWriteVal;
 LOCAL biDevInitRec       biDevInitRecAbDf1;
 LOCAL biDevRead          biDevReadAbDf1;
 
-LOCAL devAbDf1NewCacheValueFunc  biDevAbDf1NewValue;
+LOCAL void biDevAbDf1NewValue(abDf1ElemIO *pIO);
 
 /*
  * Binary Output Routines
@@ -194,9 +207,9 @@ LOCAL devAbDf1NewCacheValueFunc  biDevAbDf1NewValue;
 LOCAL boDevInitRec       boDevInitRecAbDf1;
 LOCAL boDevWrite         boDevWriteAbDf1;
 
-LOCAL devAbDf1NewCacheValueFunc      boDevAbDf1NewValue;
-LOCAL devAbDf1WriteCompletionFunc    boDevAbDf1WriteCompletion;
-LOCAL devAbDf1CurrentWriteValueFunc  boDevAbDf1CurrentWriteVal;
+LOCAL void boDevAbDf1NewValue(abDf1ElemIO *pIO);
+LOCAL void boDevAbDf1WriteCompletion(abDf1ElemIO *pIO, epicsInt32 status);
+LOCAL void boDevAbDf1CurrentWriteVal(abDf1ElemIO *pIO, abDf1Value *pVal);
 
 /*
  * Multi-bit Binary Input Routines
@@ -204,7 +217,7 @@ LOCAL devAbDf1CurrentWriteValueFunc  boDevAbDf1CurrentWriteVal;
 LOCAL mbbiDevInitRec       mbbiDevInitRecAbDf1;
 LOCAL mbbiDevRead          mbbiDevReadAbDf1;
 
-LOCAL devAbDf1NewCacheValueFunc  mbbiDevAbDf1NewValue;
+LOCAL void  mbbiDevAbDf1NewValue(abDf1ElemIO *pIO);
 
 /*
  * Multi-bit Binary Output Routines
@@ -212,24 +225,27 @@ LOCAL devAbDf1NewCacheValueFunc  mbbiDevAbDf1NewValue;
 LOCAL mbboDevInitRec mbboDevInitRecAbDf1;
 LOCAL mbboDevWrite mbboDevWriteAbDf1;
 
-LOCAL devAbDf1NewCacheValueFunc      mbboDevAbDf1NewValue;
-LOCAL devAbDf1WriteCompletionFunc    mbboDevAbDf1WriteCompletion;
-LOCAL devAbDf1CurrentWriteValueFunc  mbboDevAbDf1CurrentWriteVal;
+LOCAL void mbboDevAbDf1NewValue(abDf1ElemIO *pIO);
+LOCAL void mbboDevAbDf1WriteCompletion(abDf1ElemIO *pIO, epicsInt32 status);
+LOCAL void mbboDevAbDf1CurrentWriteVal(abDf1ElemIO *pIO, abDf1Value *pVal);
 
 /*
  * Routines common to all input records
  */
-LOCAL devAbDf1CurrentWriteValueFunc  dummyCurrentWriteVal;
-LOCAL devAbDf1WriteCompletionFunc    dummyWriteCompletion;
-LOCAL devAbDf1NewCacheValueFunc      dummyNewValue;
+//LOCAL devAbDf1CurrentWriteValueFunc  dummyCurrentWriteVal;
+//LOCAL devAbDf1WriteCompletionFunc    dummyWriteCompletion;
+//LOCAL devAbDf1NewCacheValueFunc      dummyNewValue;
+LOCAL void  dummyCurrentWriteVal(abDf1ElemIO *pElem, abDf1Value *pVal);
+LOCAL void  dummyWriteCompletion(abDf1ElemIO *pElem, epicsInt32 status);
+LOCAL void  dummyNewValue(abDf1ElemIO *pIO);
 
-/* Device CallBack Table (bad data type) */
 LOCAL devAbDf1FuncTable devAbDf1BadTypeCallBacks = {
       dummyWriteCompletion,
       dummyNewValue,
       dummyCurrentWriteVal,
       devAbParseAddress
 };
+
 
 /*****************************************************************************/
 /*              Routines for Parsing Allen-Bradley Addresses                 */
@@ -251,7 +267,7 @@ LOCAL devAbDf1FuncTable devAbDf1BadTypeCallBacks = {
 /*                                                                           */
 /*****************************************************************************/
 
-LOCAL long devAbParseSymbol (
+LOCAL epicsInt32 devAbParseSymbol (
    const char  *string,               /* Pointer to subelement string              */
    int          fileType,             /* Type of file the element is in            */
    int         *dataType,             /* Type of subelement                        */
@@ -262,7 +278,7 @@ LOCAL long devAbParseSymbol (
   /*---------------------
    * Local variables
    */
-   char                     c = *string++;      /* Next character to parse   */
+   unsigned char            c = *string++;      /* Next character to parse   */
    int                      i;                  /* Loop counter              */
    const subelementSymbol  *list;               /* List of valid symbols     */
    int                      numSymbols;         /* Number of symbols in list */
@@ -286,7 +302,7 @@ LOCAL long devAbParseSymbol (
 
    /*--------------------
     * The number of sub elements is the byte size divided by two.
-	*/
+   */
    numSymbols = abDataSize(fileType)/2u;
    if (!numSymbols || !abDataStructure(fileType)) return S_drvAbDf1_unrecSubelement;
 
@@ -306,20 +322,20 @@ LOCAL long devAbParseSymbol (
          return OK;
       }/*end if we found the symbol*/
 
-	  /*---------------------
-	   * Look for a bit string symbol that matches
-	   */
-	  if (pBits) {
-		  while (pBits->symbol) {
+     /*---------------------
+      * Look for a bit string symbol that matches
+      */
+     if (pBits) {
+        while (pBits->symbol) {
               if (!strcmp(symbol, pBits->symbol)) {
                   *dataType = df1DTBit;
                   *subelement = i;
                   *bitNum = pBits->bit;
                   return OK;
-			  }/*end if we found the bit symbol*/
-			  pBits++;
+           }/*end if we found the bit symbol*/
+           pBits++;
           }/*end for each subelement bit symbol for this subelement*/
-	  }
+     }
    }/*end for each subelement symbol valid for this file type*/
 
   /*---------------------
@@ -344,7 +360,7 @@ LOCAL long devAbParseSymbol (
 /*                                                                           */
 /*****************************************************************************/
 
-LOCAL long devAbParseAddress (
+LOCAL epicsInt32 devAbParseAddress (
    const char  *address,              /* String containing Allen-Bradley address   */
    int         *fileType,             /* Type of file specified (returned)         */
    int         *dataType,             /* Type of subelement (returned)             */
@@ -359,12 +375,12 @@ LOCAL long devAbParseAddress (
   /*---------------------
    * Local variables
    */
-   int    base = 10;            /* Base for numeric conversions (base 10)		*/
-   char   fileChar;             /* File character from address string			*/
-   int    noSubelement = TRUE;  /* True when no sub-element in address string	*/
-   int    predefined = FALSE;   /* True when predefined file is specified		*/
-   char   separator;            /* Current separator character					*/
-   char  *tail;                 /* Rest of address string after numeric parse	*/
+   int    base = 10;            /* Base for numeric conversions (base 10)      */
+   unsigned char   fileChar;    /* File character from address string         */
+   int    noSubelement = TRUE;  /* True when no sub-element in address string   */
+   int    predefined = FALSE;   /* True when predefined file is specified      */
+   unsigned char  separator;            /* Current separator character               */
+   char  *tail;                 /* Rest of address string after numeric parse   */
 
   /*---------------------
    * Set default return values
@@ -408,12 +424,12 @@ LOCAL long devAbParseAddress (
    */
 
    case 'S':    /* Status file (2) or String (ST) or SFC Status (SC) */
-      if ((toupper(*address)) == 'C') {
+      if (toupper((unsigned char)*address) == 'C') {
          address++;
          *fileType = df1DTSFCStat;
       }/*end if SFC Status*/
 
-      else if ((toupper(*address)) == 'T') {
+      else if (toupper((unsigned char)*address) == 'T') {
          address++;
          *fileType = df1DTByteStr;
       }/*end if block transfer control block*/
@@ -426,19 +442,19 @@ LOCAL long devAbParseAddress (
       break;
 
    case 'B':    /* Binary (B) or Block Xfr Control (BT) */
-      if ((toupper(*address)) == 'T') {
+      if (toupper((unsigned char)*address) == 'T') {
          address++;
          *fileType = df1DTBT;
       }/*end if block transfer control block*/
       break;
 
    case 'M':    /* Message (MG) */
-      if ((toupper(*address)) != 'G') return S_drvAbDf1_badType;
+      if (toupper((unsigned char)*address) != 'G') return S_drvAbDf1_badType;
       address++;
       break;
 
    case 'P':    /* PID Block (PD) */
-      if ((toupper(*address)) != 'D') return S_drvAbDf1_badType;
+      if (toupper((unsigned char)*address) != 'D') return S_drvAbDf1_badType;
       address++;
       break;
 
@@ -455,7 +471,7 @@ LOCAL long devAbParseAddress (
    * Parse the file number (if not predefined)
    */
    if (!predefined) {
-      if (!isdigit(*address)) return S_drvAbDf1_badFile;
+      if (!isdigit((unsigned char)*address)) return S_drvAbDf1_badFile;
       *fileNumber = strtol (address, &tail, base);
       address = tail;
    }/*end if not a predefined file*/
@@ -471,7 +487,7 @@ LOCAL long devAbParseAddress (
       else if ((separator != '/') || (*fileType != df1DTBit)) return S_drvAbDf1_addrGarbage;
    }/*end if separator character not a colon*/
 
-   if (!isdigit(*address)) return S_drvAbDf1_badElement;
+   if (!isdigit((unsigned char)*address)) return S_drvAbDf1_badElement;
    *element = strtol (address, &tail, base);
    address = tail;
 
@@ -491,7 +507,7 @@ LOCAL long devAbParseAddress (
          return S_drvAbDf1_addrGarbage;
 
       /* Check for symbolic subelement */
-      if (!isdigit(*address))
+      if (!isdigit((unsigned char)*address))
          return devAbParseSymbol (address, *fileType, dataType, subelement, bitNum);
 
       /* Convert numeric subelement */
@@ -510,7 +526,7 @@ LOCAL long devAbParseAddress (
   /*---------------------
    * Abort if there is garbage at the end of the address string.
    */
-   if (separator && *address && !isspace(*address)) return S_drvAbDf1_addrGarbage;
+   if (separator && *address && !isspace((unsigned char)*address)) return S_drvAbDf1_addrGarbage;
 
   /*---------------------
    * Special case checking for default or implied subelements in the case
@@ -521,8 +537,8 @@ LOCAL long devAbParseAddress (
      /*---------------------
       * Handle special case for binary files in which only the bit number
       * is specified in the address. In this situation the element is the word 
-	  * number and to remain consistent then the file is really of type int 
-	  * (16 bit words).
+     * number and to remain consistent then the file is really of type int 
+     * (16 bit words).
       */
       if (*fileType == df1DTBit) {
          *fileType = df1DTInt;
@@ -531,11 +547,11 @@ LOCAL long devAbParseAddress (
       }/*end if only bit number specified in binary file*/
 
      /*---------------------
-	  * Not specifying the sub element for a structured type is
-	  * classified as an invalid address
-	  */
+     * Not specifying the sub element for a structured type is
+     * classified as an invalid address
+     */
       else if (*structured) {
-		 return S_drvAbDf1_unrecSubelement;
+       return S_drvAbDf1_unrecSubelement;
       }/*end else check for structured file type*/
 
    }/*end if subelement not specified*/
@@ -560,18 +576,22 @@ LOCAL long devAbParseAddress (
 /*  Allen-Bradley address parsing routine.                                   */
 /*---------------------------------------------------------------------------*/
 
+#if 0
 LOCAL devAbDf1FuncTable initCallBacks = {
       dummyWriteCompletion,
       dummyNewValue,
       dummyCurrentWriteVal,
       devAbParseAddress
 };
+#else
+//LOCAL devAbDf1FuncTable initCallBacks;
+#endif
 
 /*---------------------------------------------------------------------------*/
 /*  Code for devAbDf1CommonInit ()                                           */
 /*---------------------------------------------------------------------------*/
 
-LOCAL long devAbDf1CommonInit (
+LOCAL epicsInt32 devAbDf1CommonInit (
    void                *pRec,           /* Ptr to record structure           */
    const struct link   *pLink,          /* Ptr to record's i/o link field    */
    int                  input,          /* TRUE if this is an input record   */
@@ -584,6 +604,18 @@ LOCAL long devAbDf1CommonInit (
    drvAbDf1FuncTable   *drvFunc = NULL; /* Address of driver function table  */
    abDf1ElemIO         *pIO     = NULL; /* Address of element-io structure   */
    int                  status  = OK;   /* Local status variable             */
+
+
+#if 0
+#else
+   devAbDf1FuncTable initCallBacks = {
+       dummyWriteCompletion,
+       dummyNewValue,
+       dummyCurrentWriteVal,
+       devAbParseAddress
+   };
+#endif
+
 
   /*---------------------
    * Check the link type to locate the appropriate driver.
@@ -668,10 +700,10 @@ LOCAL long devAbDf1CommonInit (
 /*                                                                           */
 /*****************************************************************************/
 
-LOCAL long devInitAbDf1 (unsigned pass)
+LOCAL epicsInt32 devInitAbDf1 (unsigned pass)
 {
    int                 i;                     /* Loop counter                */
-   SYM_TYPE            dummy;                 /* Dummy symbol type           */
+   //SYM_TYPE            dummy;                 /* Dummy symbol type           */
    drvAbDf1FuncTable  *drvFunc;               /* Ptr to driver function table*/
 
    static int          firstPassDone = FALSE; /* True after driver function tables have been located */
@@ -692,12 +724,17 @@ LOCAL long devInitAbDf1 (unsigned pass)
       * Loop to see which drivers have been loaded and fill in their
       * function table addresses.
       */
+#if 0
       for (i=0; i < MAX_DRIVERS; i++) {
          funcTable[i] = NULL;
          symFindByName (sysSymTbl,
                        (char *)funcTableName[i],
                        (char **)&funcTable[i], &dummy);
       }/*end for each possible driver*/
+#else
+     funcTable[0] =  &drvAbDf1Func;
+     funcTable[1] =  NULL; /* &drvPlc5vFunc not supported */
+#endif
 
       firstPassDone = TRUE;
       break;
@@ -738,17 +775,17 @@ LOCAL long devInitAbDf1 (unsigned pass)
  */
 LOCAL void dummyCurrentWriteVal (abDf1ElemIO *pElem, abDf1Value *pVal)
 {
-	/*
-	 * avoids non-determanistic response to
-	 * data types that have not been implemented
-	 */
-	memset (pVal, '\0', sizeof(*pVal));
+   /*
+    * avoids non-determanistic response to
+    * data types that have not been implemented
+    */
+   memset (pVal, '\0', sizeof(*pVal));
 }
 
 /*
  * Complete Write Operation
  */
-LOCAL void dummyWriteCompletion (abDf1ElemIO *pElem, long status)
+LOCAL void dummyWriteCompletion (abDf1ElemIO *pElem, epicsInt32 status)
 {
 }
 
@@ -768,7 +805,7 @@ LOCAL void dummyNewValue (abDf1ElemIO *pIO)
 /*                                                                           */
 /*****************************************************************************/
 
-LOCAL long  devGetIoIntInfoAbDf1 (
+LOCAL epicsInt32  devGetIoIntInfoAbDf1 (
 int         cmd,
 dbCommon   *pRec,
 IOSCANPVT  *pPvt)
@@ -865,7 +902,7 @@ ai_dev_sup devAiAbDf1_fp = {    /* floating point AB ai Record */
       };
 
 /* Device CallBack Table (floating point) */
-LOCAL devAbDf1FuncTable aiDevAbDf1FloatCallBacks = {
+devAbDf1FuncTable aiDevAbDf1FloatCallBacks = {
       dummyWriteCompletion,
       aiDevAbDf1NewFloatValue,
       dummyCurrentWriteVal,
@@ -883,144 +920,144 @@ LOCAL devAbDf1FuncTable aiDevAbDf1WordCallBacks = {
 /*
  * aiDevInitRecAbDf1 () -- Initialize ai Record
  */
-LOCAL long
+LOCAL epicsInt32
 aiDevInitRecAbDf1 (struct aiRecord *pai) 
 {
-	long          status;
-	abDf1ElemIO  *pIO;
-	ai_dev_sup   *dset;
+   epicsInt32          status;
+   abDf1ElemIO  *pIO;
+   ai_dev_sup   *dset;
 
-	status = devAbDf1CommonInit (pai, &pai->inp, INPUT, &pIO, NULL);
-	if (status != OK) return status;
+   status = devAbDf1CommonInit (pai, &pai->inp, INPUT, &pIO, NULL);
+   if (status != OK) return status;
 
-	/*
-	 * Invoke the linear conversion routine to set the slope
-	 */
-	dset = (ai_dev_sup *)pai->dset;
-	(*dset->specialLinearConv) (pai, TRUE);
+   /*
+    * Invoke the linear conversion routine to set the slope
+    */
+   dset = (ai_dev_sup *)pai->dset;
+   (*dset->specialLinearConv) (pai, TRUE);
 
-	/*
-	 * set up async completion
-	 */
-	switch (pIO->dataType) {
-	case df1DTInt:
+   /*
+    * set up async completion
+    */
+   switch (pIO->dataType) {
+   case df1DTInt:
 
-		pIO->devFunc = &aiDevAbDf1WordCallBacks;
-		break;
+      pIO->devFunc = &aiDevAbDf1WordCallBacks;
+      break;
 
-	case df1DTFP:
-		pIO->devFunc = &aiDevAbDf1FloatCallBacks;
-		/*
-		 * override the specified DSET
-		 */
-		dset = &devAiAbDf1_fp;
-		pai->dset = (void *) dset;
-		break;
+   case df1DTFP:
+      pIO->devFunc = &aiDevAbDf1FloatCallBacks;
+      /*
+       * override the specified DSET
+       */
+      dset = &devAiAbDf1_fp;
+      pai->dset = (void *) dset;
+      break;
 
-	default:
-		pIO->devFunc = &devAbDf1BadTypeCallBacks;
-		recGblRecordError (S_drvAbDf1_uknDataType, (void *) pai,
-			   __FILE__ "- unsupported data type");
-		status = S_drvAbDf1_uknDataType;
-	}
+   default:
+      pIO->devFunc = &devAbDf1BadTypeCallBacks;
+      recGblRecordError (S_drvAbDf1_uknDataType, (void *) pai,
+            __FILE__ "- unsupported data type");
+      status = S_drvAbDf1_uknDataType;
+   }
 
-	pai->dpvt = (void *) pIO;
+   pai->dpvt = (void *) pIO;
 
-	return status;
+   return status;
 }
 
 
 /*
  * aiDevReadUnsignedAbDf1 () -- Analog input routine
  */
-LOCAL long
+LOCAL epicsInt32
 aiDevReadUnsignedAbDf1 (struct aiRecord * pai)
 {
-	drvAbDf1FuncTable  *drvFunc;
-	abDf1ElemIO        *pIO = (abDf1ElemIO *) pai->dpvt;
-	long                status;
-	uint16_t			rval;
+   drvAbDf1FuncTable  *drvFunc;
+   abDf1ElemIO        *pIO = (abDf1ElemIO *) pai->dpvt;
+   epicsInt32                status;
+   epicsUInt16         rval;
 
-	if (!pIO) {
-		recGblSetSevr((struct dbCommon *)pai,
-								READ_ALARM,INVALID_ALARM);
-		return S_devAbDf1_dontConvert;
-	}
+   if (!pIO) {
+      recGblSetSevr((struct dbCommon *)pai,
+                        READ_ALARM,INVALID_ALARM);
+      return S_devAbDf1_dontConvert;
+   }
 
-	drvFunc = pIO->drvFunc;
-	status = (*drvFunc->ReadWord) (pIO, &rval);
-	if (status == S_drvAbDf1_OK) {
-		pai->rval = (long) rval;
-		return status;
-	}
+   drvFunc = pIO->drvFunc;
+   status = (*drvFunc->ReadWord) (pIO, &rval);
+   if (status == S_drvAbDf1_OK) {
+      pai->rval = (epicsInt32) rval;
+      return status;
+   }
 
-	recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
-	return status;
+   recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
+   return status;
 }
 
 /*
  * aiDevReadSignedAbDf1 () -- Analog input routine
  */
-LOCAL long
+LOCAL epicsInt32
 aiDevReadSignedAbDf1 (struct aiRecord * pai)
 {
-	drvAbDf1FuncTable  *drvFunc;
-	abDf1ElemIO        *pIO = (abDf1ElemIO *) pai->dpvt;
-	long                status;
-	int16_t				rval;
+   drvAbDf1FuncTable  *drvFunc;
+   abDf1ElemIO        *pIO = (abDf1ElemIO *) pai->dpvt;
+   epicsInt32                status;
+   epicsInt16            rval;
 
-	if (!pIO) {
-		recGblSetSevr((struct dbCommon *)pai,
-								READ_ALARM,INVALID_ALARM);
-		return S_devAbDf1_dontConvert;
-	}
+   if (!pIO) {
+      recGblSetSevr((struct dbCommon *)pai,
+                        READ_ALARM,INVALID_ALARM);
+      return S_devAbDf1_dontConvert;
+   }
 
-	drvFunc = pIO->drvFunc;
-	status = (*drvFunc->ReadWord) (pIO, (uint16_t *) &rval);
-	if (status == S_drvAbDf1_OK) {
-		pai->rval = (long) rval;
-		return status;
-	}
+   drvFunc = pIO->drvFunc;
+   status = (*drvFunc->ReadWord) (pIO, (epicsUInt16 *) &rval);
+   if (status == S_drvAbDf1_OK) {
+      pai->rval = (epicsInt32) rval;
+      return status;
+   }
 
-	recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
-	return status;
+   recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
+   return status;
 }
 
 /*
  * aiDevReadFloatAbDf1 () -- Analog input routine
  */
-LOCAL long
+LOCAL epicsInt32
 aiDevReadFloatAbDf1 (struct aiRecord * pai)
 {
-	drvAbDf1FuncTable  *drvFunc;
-	abDf1ElemIO        *pIO = (abDf1ElemIO *) pai->dpvt;
-	long                status;
-	float				real;
+   drvAbDf1FuncTable  *drvFunc;
+   abDf1ElemIO        *pIO = (abDf1ElemIO *) pai->dpvt;
+   epicsInt32                status;
+   float            real;
 
-	if (!pIO) {
-		recGblSetSevr((struct dbCommon *)pai,
-								READ_ALARM,INVALID_ALARM);
-		return S_devAbDf1_dontConvert;
-	}
+   if (!pIO) {
+      recGblSetSevr((struct dbCommon *)pai,
+                        READ_ALARM,INVALID_ALARM);
+      return S_devAbDf1_dontConvert;
+   }
 
-	drvFunc = pIO->drvFunc;
-	status = (*drvFunc->ReadReal) (pIO, &real);
-	if (status == S_drvAbDf1_OK) {
-		pai->val = (double) real;
-		pai->udf = FALSE;
-		/* AWE raise monitors */
-		db_post_events(pai, &pai->val, DBE_VALUE|DBE_LOG);
-		return S_devAbDf1_dontConvert;
-	}
+   drvFunc = pIO->drvFunc;
+   status = (*drvFunc->ReadReal) (pIO, &real);
+   if (status == S_drvAbDf1_OK) {
+      pai->val = (double) real;
+      pai->udf = FALSE;
+      /* AWE raise monitors */
+      db_post_events(pai, &pai->val, DBE_VALUE|DBE_LOG);
+      return S_devAbDf1_dontConvert;
+   }
 
-	recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
-	return status;
+   recGblSetSevr(pai,READ_ALARM,INVALID_ALARM);
+   return status;
 }
 
 /*
  * aiDevLinearConvertAbDf1_12 () -- Set slope for unsigned 12-bit linear conversion
  */
-LOCAL long aiDevLinearConvertAbDf1_12 (struct aiRecord *pai, int after)
+LOCAL epicsInt32 aiDevLinearConvertAbDf1_12 (struct aiRecord *pai, int after)
 {
 
     if(!after) return(S_devAbDf1_OK);
@@ -1032,7 +1069,7 @@ LOCAL long aiDevLinearConvertAbDf1_12 (struct aiRecord *pai, int after)
 /*
  * aiDevLinearConvertAbDf1_16 () -- Set slope for unsigned 16-bit linear conversion
  */
-LOCAL long aiDevLinearConvertAbDf1_16 (struct aiRecord *pai, int after)
+LOCAL epicsInt32 aiDevLinearConvertAbDf1_16 (struct aiRecord *pai, int after)
 {
 
     if(!after) return(S_devAbDf1_OK);
@@ -1046,56 +1083,56 @@ LOCAL long aiDevLinearConvertAbDf1_16 (struct aiRecord *pai, int after)
  */
 LOCAL void aiDevAbDf1NewFloatValue (abDf1ElemIO *pIO)
 {
-	drvAbDf1FuncTable  *drvFunc = pIO->drvFunc;
-	struct aiRecord    *pai = (struct aiRecord *) pIO->pRec;
-	unsigned            scanRequired = FALSE;
-	long                status;
-	float			    real;
+   drvAbDf1FuncTable  *drvFunc = pIO->drvFunc;
+   struct aiRecord    *pai = (struct aiRecord *) pIO->pRec;
+   unsigned            scanRequired = FALSE;
+   epicsInt32                status;
+   float             real;
 
-	status = (*drvFunc->ReadReal) (pIO, &real);
-	if (status == S_drvAbDf1_OK) {
-		  if ((pai->val != (double)real) || (pai->sevr >= INVALID_ALARM)) {
-				scanRequired = TRUE;
-		  }
-	}
-	else if (pai->sevr < INVALID_ALARM) {
-		  scanRequired = TRUE;
-	}
+   status = (*drvFunc->ReadReal) (pIO, &real);
+   if (status == S_drvAbDf1_OK) {
+        if ((pai->val != (double)real) || (pai->sevr >= INVALID_ALARM)) {
+            scanRequired = TRUE;
+        }
+   }
+   else if (pai->sevr < INVALID_ALARM) {
+        scanRequired = TRUE;
+   }
 
-	if (scanRequired && pIO->ioScanPvt) {
-		scanIoRequest(pIO->ioScanPvt);
-	}
+   if (scanRequired && pIO->ioScanPvt) {
+      scanIoRequest(pIO->ioScanPvt);
+   }
 }
 /*
  * aiDevAbDf1NewWordValue () -- Respond to new word value 
  */
 LOCAL void aiDevAbDf1NewWordValue (abDf1ElemIO *pIO)
 {
-	drvAbDf1FuncTable  *drvFunc = pIO->drvFunc;
-	struct aiRecord    *pai = (struct aiRecord *) pIO->pRec;
-	unsigned            scanRequired = FALSE;
-	long                status;
-	uint16_t			rval;
+   drvAbDf1FuncTable  *drvFunc = pIO->drvFunc;
+   struct aiRecord    *pai = (struct aiRecord *) pIO->pRec;
+   unsigned            scanRequired = FALSE;
+   epicsInt32                status;
+   epicsUInt16         rval;
 
-	status = (*drvFunc->ReadWord) (pIO, &rval);
-	if (status == S_drvAbDf1_OK) {
-		/*
-		 * when looking for a bit level change we discard the
-		 * upper bits in pai->rval so that signed/unsigned data
-		 * can be compared with the same code
-		 */
-		uint16_t recVal = (uint16_t) pai->rval;
-		if ((recVal != (long)rval) || (pai->sevr >= INVALID_ALARM)) {
-			scanRequired = TRUE;
-		}
-	}
-	else if (pai->sevr < INVALID_ALARM) {
-		scanRequired = TRUE;
-	}
+   status = (*drvFunc->ReadWord) (pIO, &rval);
+   if (status == S_drvAbDf1_OK) {
+      /*
+       * when looking for a bit level change we discard the
+       * upper bits in pai->rval so that signed/unsigned data
+       * can be compared with the same code
+       */
+      epicsUInt16 recVal = (epicsUInt16) pai->rval;
+      if ((recVal != (epicsInt32)rval) || (pai->sevr >= INVALID_ALARM)) {
+         scanRequired = TRUE;
+      }
+   }
+   else if (pai->sevr < INVALID_ALARM) {
+      scanRequired = TRUE;
+   }
 
-	if (scanRequired && pIO->ioScanPvt) {
-		scanIoRequest(pIO->ioScanPvt);
-	}
+   if (scanRequired && pIO->ioScanPvt) {
+      scanIoRequest(pIO->ioScanPvt);
+   }
 }
 
 /*****************************************************************************/
@@ -1179,19 +1216,19 @@ LOCAL devAbDf1FuncTable aoDevAbDf1UnsignedWordCallBacks = {
 /*
  * aoDevInitRecAbDf1Unsigned () -- Initialize unsigned ao Record
  */
-LOCAL long
+LOCAL epicsInt32
 aoDevInitRecAbDf1Unsigned (struct aoRecord *pao) 
 {
-	return aoDevInitRecAbDf1 (pao, 0);	
+   return aoDevInitRecAbDf1 (pao, 0);   
 }
 
 /*
  * aoDevInitRecSignedAbDf1 () -- Initialize signed ao Record
  */
-LOCAL long
+LOCAL epicsInt32
 aoDevInitRecAbDf1Signed (struct aoRecord *pao) 
 {
-	return aoDevInitRecAbDf1 (pao, 1);	
+   return aoDevInitRecAbDf1 (pao, 1);   
 }
 
 /*
@@ -1200,93 +1237,93 @@ aoDevInitRecAbDf1Signed (struct aoRecord *pao)
  * if signedValue is T then the value is interpreted as signed,
  * else unsigned
  */
-LOCAL long
+LOCAL epicsInt32
 aoDevInitRecAbDf1 (struct aoRecord *pao, int signedValue) 
 {
-	long          status;
-	abDf1ElemIO  *pIO;
-	ao_dev_sup   *dset;
+   epicsInt32          status;
+   abDf1ElemIO  *pIO;
+   ao_dev_sup   *dset;
 
-	status = devAbDf1CommonInit (pao, &pao->out, OUTPUT, &pIO, NULL);
-	if (status != OK) return S_devAbDf1_dontConvert;
+   status = devAbDf1CommonInit (pao, &pao->out, OUTPUT, &pIO, NULL);
+   if (status != OK) return S_devAbDf1_dontConvert;
 
-	/* 
-	 * Invoke the linear conversion routine to set the slope
-	 */
-	dset = (ao_dev_sup *)pao->dset;
-	(*dset->specialLinearConv) (pao, TRUE);
+   /* 
+    * Invoke the linear conversion routine to set the slope
+    */
+   dset = (ao_dev_sup *)pao->dset;
+   (*dset->specialLinearConv) (pao, TRUE);
 
-	/*
-	 * set up async completion
-	 */
-	switch (pIO->dataType) {
-	case df1DTInt:
-		if (signedValue) {
-			pIO->devFunc = &aoDevAbDf1SignedWordCallBacks;
-		}
-		else {
-			pIO->devFunc = &aoDevAbDf1UnsignedWordCallBacks;
-		}
-		status = S_devAbDf1_dontConvert;
-		break;
+   /*
+    * set up async completion
+    */
+   switch (pIO->dataType) {
+   case df1DTInt:
+      if (signedValue) {
+         pIO->devFunc = &aoDevAbDf1SignedWordCallBacks;
+      }
+      else {
+         pIO->devFunc = &aoDevAbDf1UnsignedWordCallBacks;
+      }
+      status = S_devAbDf1_dontConvert;
+      break;
 
-	case df1DTFP:
-		pIO->devFunc = &aoDevAbDf1FloatCallBacks;
-		status = S_devAbDf1_dontConvert;
-		break;
+   case df1DTFP:
+      pIO->devFunc = &aoDevAbDf1FloatCallBacks;
+      status = S_devAbDf1_dontConvert;
+      break;
 
-	default:
-		pIO->devFunc = &devAbDf1BadTypeCallBacks;
-		recGblRecordError (S_drvAbDf1_uknDataType, (void *) pao,
-			   __FILE__ "- unsupported data type");
-		status = S_drvAbDf1_uknDataType;
-		break;
+   default:
+      pIO->devFunc = &devAbDf1BadTypeCallBacks;
+      recGblRecordError (S_drvAbDf1_uknDataType, (void *) pao,
+            __FILE__ "- unsupported data type");
+      status = S_drvAbDf1_uknDataType;
+      break;
 
-	}
+   }
 
-	pao->dpvt = (void *) pIO;
+   pao->dpvt = (void *) pIO;
 
-	return status; 
+   return status; 
 }
 
 /*
  * aoDevWriteAbDf1 () -- Analog output routine
  */
-LOCAL long
+LOCAL epicsInt32
 aoDevWriteAbDf1 (struct aoRecord *pao)
 {
-	abDf1ElemIO *pIO = (abDf1ElemIO *)pao->dpvt;
-	long status;
+   abDf1ElemIO *pIO = (abDf1ElemIO *)pao->dpvt;
+   epicsInt32 status;
 
-	if (pao->pact) {
-		return S_devAbDf1_OK; 
-	}
+   if (pao->pact) {
+      return S_devAbDf1_OK; 
+   }
 
-	if (!pIO) {
-		recGblSetSevr((struct dbCommon *)pao,
-								WRITE_ALARM,INVALID_ALARM);
-		return S_devAbDf1_OK; 
-	}
+   if (!pIO) {
+      recGblSetSevr((struct dbCommon *)pao,
+                        WRITE_ALARM,INVALID_ALARM);
+      return S_devAbDf1_OK; 
+   }
 
-	pao->pact = TRUE; /* see aoDevAbDf1NewValue */
-	status = (*pIO->drvFunc->InitiateWrite) (pIO);
-	if (status == S_drvAbDf1_OK) {
-		pao->pact = FALSE;
-	}
-	else if (status==S_drvAbDf1_asyncCompletion) {
-		status = S_drvAbDf1_OK;
-	}
-	else {
-		recGblSetSevr (pao, WRITE_ALARM, INVALID_ALARM);
-		pao->pact = FALSE;
-	}
-	return status;
+   pao->pact = TRUE; /* see aoDevAbDf1NewValue */
+   status = (*pIO->drvFunc->InitiateWrite) (pIO);
+   if (status == S_drvAbDf1_OK) {
+      pao->pact = FALSE;
+   }
+   else if (status==S_drvAbDf1_asyncCompletion) {
+      status = S_drvAbDf1_OK;
+   }
+   else {
+      recGblSetSevr (pao, WRITE_ALARM, INVALID_ALARM);
+      pao->pact = FALSE;
+   }
+   return status;
 }
 
 /*
  * aoDevLinearConvertAbDf1_12 () -- Set slope for 12-bit linear conversion
  */
-LOCAL long aoDevLinearConvertAbDf1_12 (struct aoRecord *pao, int after)
+LOCAL epicsInt32 aoDevLinearConvertAbDf1_12 (struct aoRecord *pao, int after)
 {
     if(!after) return(S_devAbDf1_OK);
     /* set linear conversion slope*/
@@ -1297,7 +1334,7 @@ LOCAL long aoDevLinearConvertAbDf1_12 (struct aoRecord *pao, int after)
 /*
  * aoDevLinearConvertAbDf1_16 () -- Set slope for 16-bit linear conversion
  */
-LOCAL long aoDevLinearConvertAbDf1_16 (struct aoRecord *pao, int after)
+LOCAL epicsInt32 aoDevLinearConvertAbDf1_16 (struct aoRecord *pao, int after)
 {
     if(!after) return(S_devAbDf1_OK);
     /* set linear conversion slope*/
@@ -1308,7 +1345,7 @@ LOCAL long aoDevLinearConvertAbDf1_16 (struct aoRecord *pao, int after)
 /*
  * aoDevAbDf1WriteCompletion () -- Write completion routine
  */
-LOCAL void aoDevAbDf1WriteCompletion (abDf1ElemIO *pIO, long status)
+LOCAL void aoDevAbDf1WriteCompletion (abDf1ElemIO *pIO, epicsInt32 status)
 {
       struct aoRecord *pao = (struct aoRecord *) pIO->pRec;
       struct rset *prset = (struct rset *) (pao->rset);
@@ -1336,7 +1373,7 @@ LOCAL void aoDevAbDf1WriteCompletion (abDf1ElemIO *pIO, long status)
  */
 LOCAL void aoDevAbDf1NewSignedValue (abDf1ElemIO *pIO)
 {
-	aoDevAbDf1NewWordValue (pIO, 1);
+   aoDevAbDf1NewWordValue (pIO, 1);
 }
 
 /*
@@ -1344,7 +1381,7 @@ LOCAL void aoDevAbDf1NewSignedValue (abDf1ElemIO *pIO)
  */
 LOCAL void aoDevAbDf1NewUnsignedValue (abDf1ElemIO *pIO)
 {
-	aoDevAbDf1NewWordValue (pIO, 0);
+   aoDevAbDf1NewWordValue (pIO, 0);
 }
 
 /*
@@ -1355,132 +1392,132 @@ LOCAL void aoDevAbDf1NewUnsignedValue (abDf1ElemIO *pIO)
  */
 LOCAL void aoDevAbDf1NewWordValue (abDf1ElemIO *pIO, int signedValue)
 {
-	drvAbDf1FuncTable  *drvFunc = pIO->drvFunc;
-	struct aoRecord    *pao = (struct aoRecord *) pIO->pRec;
-	unsigned            scanRequired = FALSE;
-	long                status = S_devAbDf1_OK;
-	double              value;
-	uint16_t			rval;
+   drvAbDf1FuncTable  *drvFunc = pIO->drvFunc;
+   struct aoRecord    *pao = (struct aoRecord *) pIO->pRec;
+   unsigned            scanRequired = FALSE;
+   epicsInt32                status = S_devAbDf1_OK;
+   double              value;
+   epicsUInt16         rval;
 
-	/*
-	 * no updates when asynch write in progress
-	 */
-	if (pao->pact) {
-		return;
-	}
+   /*
+    * no updates when asynch write in progress
+    */
+   if (pao->pact) {
+      return;
+   }
 
-	dbScanLock ( (struct dbCommon *) pao);
+   dbScanLock ( (struct dbCommon *) pao);
 
-	status = (*drvFunc->ReadWord) (pIO, &rval);
-	if (status == S_drvAbDf1_OK) {
-		/*
-		 * when looking for a bit level change we discard the
-		 * upper bits in pai->rval so that signed/unsigned data
-		 * can be compared with the same code
-		 */
-		int16_t recVal = (uint16_t) pao->rval;
-		if ((recVal != rval) || (pao->sevr >= INVALID_ALARM)) {
-			scanRequired = TRUE;
+   status = (*drvFunc->ReadWord) (pIO, &rval);
+   if (status == S_drvAbDf1_OK) {
+      /*
+       * when looking for a bit level change we discard the
+       * upper bits in pai->rval so that signed/unsigned data
+       * can be compared with the same code
+       */
+      epicsInt16 recVal = (epicsUInt16) pao->rval;
+      if ((recVal != rval) || (pao->sevr >= INVALID_ALARM)) {
+         scanRequired = TRUE;
 
-			if (signedValue) {
-				int16_t newVal = (int16_t) rval;
-				pao->rval = (long) newVal;
-			}
-			else {
-				pao->rval = (long) rval;
-			}
+         if (signedValue) {
+            epicsInt16 newVal = (epicsInt16) rval;
+            pao->rval = (epicsInt32) newVal;
+         }
+         else {
+            pao->rval = (epicsInt32) rval;
+         }
 
-			value = pao->rval + pao->roff;
-			if (pao->aslo!=0.0) value *= pao->aslo;
-			if (pao->aoff!=0.0) value += pao->aoff;
-			if (pao->linr==menuConvertLINEAR) {
-				value = value*pao->eslo + pao->egul;
-			}
-			else if (pao->linr==menuConvertNO_CONVERSION) {
-				value = pao->rval;
-			}
-			else {
-				cvtRawToEngBpt(&value, pao->linr, pao->init,
-					(void *)&pao->pbrk, &pao->lbrk);
-			}
-		}
-	}
-	else if (pao->sevr < INVALID_ALARM) {
-		scanRequired = TRUE;
-	}
+         value = pao->rval + pao->roff;
+         if (pao->aslo!=0.0) value *= pao->aslo;
+         if (pao->aoff!=0.0) value += pao->aoff;
+         if (pao->linr==menuConvertLINEAR) {
+            value = value*pao->eslo + pao->egul;
+         }
+         else if (pao->linr==menuConvertNO_CONVERSION) {
+            value = pao->rval;
+         }
+         else {
+            cvtRawToEngBpt(&value, pao->linr, pao->init,
+               (void *)&pao->pbrk, &pao->lbrk);
+         }
+      }
+   }
+   else if (pao->sevr < INVALID_ALARM) {
+      scanRequired = TRUE;
+   }
 
-	if (scanRequired) {
-		aoDevAbDf1NewValue (pao, value, status);
-	}
+   if (scanRequired) {
+      aoDevAbDf1NewValue (pao, value, status);
+   }
 
-	dbScanUnlock ( (struct dbCommon *) pao);
+   dbScanUnlock ( (struct dbCommon *) pao);
 }
 /*
  * aoDevAbDf1NewFloatValue () -- Respond to new floating point value
  */
 LOCAL void aoDevAbDf1NewFloatValue (abDf1ElemIO *pIO)
 {
-	drvAbDf1FuncTable  *drvFunc = pIO->drvFunc;
-	struct aoRecord    *pao = (struct aoRecord *) pIO->pRec;
-	unsigned            scanRequired = FALSE;
-	long                status = S_devAbDf1_OK;
-	double              value = 0.0;
-	float				real;
+   drvAbDf1FuncTable  *drvFunc = pIO->drvFunc;
+   struct aoRecord    *pao = (struct aoRecord *) pIO->pRec;
+   unsigned            scanRequired = FALSE;
+   epicsInt32                status = S_devAbDf1_OK;
+   double              value = 0.0;
+   float            real;
 
-	/*
-	 * no updates when asynch write in progress
-	 */
-	if (pao->pact) {
-		return;
-	}
+   /*
+    * no updates when asynch write in progress
+    */
+   if (pao->pact) {
+      return;
+   }
 
-	dbScanLock ( (struct dbCommon *) pao);
+   dbScanLock ( (struct dbCommon *) pao);
 
-	status = (*drvFunc->ReadReal) (pIO, &real);
-	if (status == S_drvAbDf1_OK) {
-		if ((pao->val != (double)real) || (pao->sevr >= INVALID_ALARM)) {
-			value = (double) real;
-			scanRequired = TRUE;
-		}
-	}
-	else if (pao->sevr < INVALID_ALARM) {
-		scanRequired = TRUE;
-	}
+   status = (*drvFunc->ReadReal) (pIO, &real);
+   if (status == S_drvAbDf1_OK) {
+      if ((pao->val != (double)real) || (pao->sevr >= INVALID_ALARM)) {
+         value = (double) real;
+         scanRequired = TRUE;
+      }
+   }
+   else if (pao->sevr < INVALID_ALARM) {
+      scanRequired = TRUE;
+   }
 
-	if (scanRequired) {
-		aoDevAbDf1NewValue (pao, value, status);
-	}
+   if (scanRequired) {
+      aoDevAbDf1NewValue (pao, value, status);
+   }
 
-	dbScanUnlock ( (struct dbCommon *) pao);
+   dbScanUnlock ( (struct dbCommon *) pao);
 }
 
 /*
  * aoDevAbDf1NewValue () -- update record if there is a state change
  * !! dbScanLock() must be applied here !!
  */
-LOCAL void aoDevAbDf1NewValue (struct aoRecord *pao, double value, long status)
+LOCAL void aoDevAbDf1NewValue (struct aoRecord *pao, double value, epicsInt32 status)
 {
-	struct rset        *prset = (struct rset *) (pao->rset);
+   struct rset        *prset = (struct rset *) (pao->rset);
 
-	if (status==S_devAbDf1_OK) {
-		  pao->val = value;
-		  pao->oval = value;
-		  pao->pval = value;
-		  pao->udf = FALSE;
-		  /* AWE raise monitors */
-		  db_post_events(pao, &pao->val, DBE_VALUE|DBE_LOG);
-	}     
-	else {
-		  recGblSetSevr (pao, WRITE_ALARM, INVALID_ALARM);
-	}
-	/*
-	 * fake async write completion so that the 
-	 * write routine in this dev sup, and the  
-	 * conversion part of record processing will be
-	 * a NOOP.
-	 */
-	pao->pact = TRUE;
-	(*prset->process) (pao);
+   if (status==S_devAbDf1_OK) {
+        pao->val = value;
+        pao->oval = value;
+        pao->pval = value;
+        pao->udf = FALSE;
+        /* AWE raise monitors */
+        db_post_events(pao, &pao->val, DBE_VALUE|DBE_LOG);
+   }     
+   else {
+        recGblSetSevr (pao, WRITE_ALARM, INVALID_ALARM);
+   }
+   /*
+    * fake async write completion so that the 
+    * write routine in this dev sup, and the  
+    * conversion part of record processing will be
+    * a NOOP.
+    */
+   pao->pact = TRUE;
+   (*prset->process) (pao);
 }
 
 /*
@@ -1488,9 +1525,9 @@ LOCAL void aoDevAbDf1NewValue (struct aoRecord *pao, double value, long status)
  */
 LOCAL void aoDevAbDf1CurrentWordWriteVal (abDf1ElemIO *pIO, abDf1Value *pVal)
 {
-	struct aoRecord *pao = (struct aoRecord *) pIO->pRec;
+   struct aoRecord *pao = (struct aoRecord *) pIO->pRec;
 
-	pVal->word = (uint16_t) pao->rval;
+   pVal->word = (epicsUInt16) pao->rval;
 }
 
 /*
@@ -1498,9 +1535,9 @@ LOCAL void aoDevAbDf1CurrentWordWriteVal (abDf1ElemIO *pIO, abDf1Value *pVal)
  */
 LOCAL void aoDevAbDf1CurrentFloatWriteVal (abDf1ElemIO *pIO, abDf1Value *pVal)
 {
-	struct aoRecord *pao = (struct aoRecord *) pIO->pRec;
+   struct aoRecord *pao = (struct aoRecord *) pIO->pRec;
 
-	pVal->real = (float) pao->val;
+   pVal->real = (float) pao->val;
 }
 
 /*****************************************************************************/
@@ -1526,9 +1563,9 @@ LOCAL devAbDf1FuncTable bidevAbDf1FuncTable = {
 /*
  * biDevInitRecAbDf1 () -- Initialize Binary Input Record
  */
-LOCAL long biDevInitRecAbDf1 (struct biRecord *pbi) 
+LOCAL epicsInt32 biDevInitRecAbDf1 (struct biRecord *pbi) 
 {
-      long status;
+      epicsInt32 status;
       abDf1ElemIO *pIO;
       unsigned bitNo;
  
@@ -1557,11 +1594,11 @@ LOCAL long biDevInitRecAbDf1 (struct biRecord *pbi)
 /*
  * biDevReadAbDf1 () -- Binary Input Routine
  */
-LOCAL long biDevReadAbDf1 (struct biRecord * pbi)
+LOCAL epicsInt32 biDevReadAbDf1 (struct biRecord * pbi)
 {
       abDf1ElemIO *pIO = (abDf1ElemIO *)pbi->dpvt;
-      uint16_t rval;
-      long status;
+      epicsUInt16 rval;
+      epicsInt32 status;
 
     if (!pIO) {
         recGblSetSevr((struct dbCommon *)pbi,
@@ -1569,12 +1606,12 @@ LOCAL long biDevReadAbDf1 (struct biRecord * pbi)
         return S_devAbDf1_dontConvert; 
     }
 
-      status = (*pIO->drvFunc->ReadBitString) (pIO, (uint16_t) pbi->mask, &rval);
+      status = (*pIO->drvFunc->ReadBitString) (pIO, (epicsUInt16) pbi->mask, &rval);
       if (status == S_drvAbDf1_OK) {
-            pbi->rval = (long) rval;
-	    pbi->val = (long) rval;
-	    /* AWE raise monitors */
-	    db_post_events(pbi, &pbi->val, DBE_VALUE|DBE_LOG);
+            pbi->rval = (epicsInt32) rval;
+       pbi->val = (epicsInt32) rval;
+       /* AWE raise monitors */
+       db_post_events(pbi, &pbi->val, DBE_VALUE|DBE_LOG);
       }
       else {
             recGblSetSevr(pbi,READ_ALARM,INVALID_ALARM);
@@ -1590,10 +1627,10 @@ LOCAL void biDevAbDf1NewValue (abDf1ElemIO *pIO)
 {
       struct biRecord *pbi = (struct biRecord *) pIO->pRec;
       unsigned scanRequired = FALSE;
-      uint16_t rval;
-      long status;
+      epicsUInt16 rval;
+      epicsInt32 status;
 
-      status = (*pIO->drvFunc->ReadBitString) (pIO, (uint16_t) pbi->mask, &rval);
+      status = (*pIO->drvFunc->ReadBitString) (pIO, (epicsUInt16) pbi->mask, &rval);
       if (status == S_drvAbDf1_OK) {
             if (pbi->rval!=rval || pbi->sevr>=INVALID_ALARM) {
                   scanRequired = TRUE;
@@ -1632,10 +1669,10 @@ LOCAL devAbDf1FuncTable bodevAbDf1FuncTable = {
 /*
  * boDevInitRecAbDf1 () -- Initialize Binary Ouptput Record
  */
-LOCAL long
+LOCAL epicsInt32
 boDevInitRecAbDf1(struct boRecord *pbo) 
 {
-      long status;
+      epicsInt32 status;
       abDf1ElemIO *pIO;
       unsigned bitNo;
  
@@ -1664,7 +1701,7 @@ boDevInitRecAbDf1(struct boRecord *pbo)
 /*
  * boDevWriteAbDf1 () -- Binary Output Routine
  */
-LOCAL long boDevWriteAbDf1 (struct boRecord * pbo)
+LOCAL epicsInt32 boDevWriteAbDf1 (struct boRecord * pbo)
 {
       abDf1ElemIO *pIO = (abDf1ElemIO *)pbo->dpvt;
       int         status;
@@ -1698,7 +1735,7 @@ LOCAL long boDevWriteAbDf1 (struct boRecord * pbo)
 /*
  * boDevAbDf1WriteCompletion () -- Binary Output Write Completion Routine
  */
-LOCAL void boDevAbDf1WriteCompletion (abDf1ElemIO *pIO, long status)
+LOCAL void boDevAbDf1WriteCompletion (abDf1ElemIO *pIO, epicsInt32 status)
 {
       struct boRecord *pbo = (struct boRecord *) pIO->pRec;
       struct rset *prset = (struct rset *) (pbo->rset);
@@ -1729,8 +1766,8 @@ LOCAL void boDevAbDf1NewValue (abDf1ElemIO *pIO)
       struct boRecord *pbo = (struct boRecord *) pIO->pRec;
       struct rset *prset = (struct rset *) (pbo->rset);
       unsigned scanRequired = FALSE;
-      long status = S_devAbDf1_OK;
-      uint16_t rval;
+      epicsInt32 status = S_devAbDf1_OK;
+      epicsUInt16 rval;
 
       /*
        * no updates when asynch write in progress
@@ -1740,15 +1777,15 @@ LOCAL void boDevAbDf1NewValue (abDf1ElemIO *pIO)
       }
 
       dbScanLock ( (struct dbCommon *) pbo);
-      status = (*pIO->drvFunc->ReadBitString) (pIO, (uint16_t) pbo->mask, &rval);
+      status = (*pIO->drvFunc->ReadBitString) (pIO, (epicsUInt16) pbo->mask, &rval);
       if (status == S_drvAbDf1_OK) {
             if (pbo->rval!=rval || pbo->sevr>=INVALID_ALARM) {
                   scanRequired = TRUE;
-                  pbo->rval = (long) rval;
+                  pbo->rval = (epicsInt32) rval;
                   pbo->val = pbo->rval ? 1 : 0;
                   pbo->udf = FALSE;
-		  /* AWE raise monitors */
-		  db_post_events(pbo, &pbo->val, DBE_VALUE|DBE_LOG);
+        /* AWE raise monitors */
+        db_post_events(pbo, &pbo->val, DBE_VALUE|DBE_LOG);
             }
       }
       else if (pbo->sevr<INVALID_ALARM) {
@@ -1804,11 +1841,11 @@ LOCAL devAbDf1FuncTable mbbidevAbDf1FuncTable = {
 /*
  * mbbiDevInitRecAbDf1 () -- Initialize mbbi Record
  */
-LOCAL long
+LOCAL epicsInt32
 mbbiDevInitRecAbDf1(struct mbbiRecord *pmbbi)
 {
       abDf1ElemIO *pIO;
-      long status;
+      epicsInt32 status;
       unsigned bitNo;
  
       status = devAbDf1CommonInit (pmbbi, &pmbbi->inp, INPUT, &pIO, &bitNo);
@@ -1841,10 +1878,10 @@ LOCAL void mbbiDevAbDf1NewValue(abDf1ElemIO *pIO)
 {
       struct mbbiRecord *pmbbi = (struct mbbiRecord *) pIO->pRec;
       unsigned scanRequired = FALSE;
-      long status;
-      uint16_t rval;
+      epicsInt32 status;
+      epicsUInt16 rval;
 
-      status = (*pIO->drvFunc->ReadBitString) (pIO, (uint16_t) pmbbi->mask, &rval);
+      status = (*pIO->drvFunc->ReadBitString) (pIO, (epicsUInt16) pmbbi->mask, &rval);
       if(status == S_drvAbDf1_OK){
              if (pmbbi->rval!=rval || pmbbi->sevr>=INVALID_ALARM) {
                   scanRequired = TRUE;
@@ -1864,23 +1901,23 @@ LOCAL void mbbiDevAbDf1NewValue(abDf1ElemIO *pIO)
 /*
  * mbbiDevReadAbDf1 () -- Mbbi Input Routine
  */
-LOCAL long mbbiDevReadAbDf1 (struct mbbiRecord * pmbbi)
+LOCAL epicsInt32 mbbiDevReadAbDf1 (struct mbbiRecord * pmbbi)
 {
       abDf1ElemIO *pIO = (abDf1ElemIO *) pmbbi->dpvt;
-      uint16_t rval;
-      long status;
+      epicsUInt16 rval;
+      epicsInt32 status;
 
       if (!pIO) {
             recGblSetSevr (pmbbi, READ_ALARM, INVALID_ALARM);
             return S_devAbDf1_dontConvert; 
       }
 
-      status = (*pIO->drvFunc->ReadBitString) (pIO, (uint16_t) pmbbi->mask, &rval);
+      status = (*pIO->drvFunc->ReadBitString) (pIO, (epicsUInt16) pmbbi->mask, &rval);
       if (status) {
             recGblSetSevr (pmbbi, READ_ALARM, INVALID_ALARM);
       }
       else {
-            pmbbi->rval = (uint16_t) rval;
+            pmbbi->rval = (epicsUInt16) rval;
       }
 
       return status;
@@ -1910,10 +1947,10 @@ LOCAL devAbDf1FuncTable mbbodevAbDf1FuncTable = {
 /*
  * mbboDevInitRecAbDf1 () -- Initialize mbbo Record
  */
-LOCAL long
+LOCAL epicsInt32
 mbboDevInitRecAbDf1(struct mbboRecord *pmbbo)
 {
-      long status;
+      epicsInt32 status;
       abDf1ElemIO *pIO;
       unsigned bitNo;
 
@@ -1942,7 +1979,7 @@ mbboDevInitRecAbDf1(struct mbboRecord *pmbbo)
 /*
  * mbboDevWriteAbDf1 () -- Mbbo Output Routine
  */
-LOCAL long mbboDevWriteAbDf1 (struct mbboRecord *pmbbo)
+LOCAL epicsInt32 mbboDevWriteAbDf1 (struct mbboRecord *pmbbo)
 {
         abDf1ElemIO     *pIO = (abDf1ElemIO *) pmbbo->dpvt;
       int         status;
@@ -1975,7 +2012,7 @@ LOCAL long mbboDevWriteAbDf1 (struct mbboRecord *pmbbo)
 /*
  * mbboDevAbDf1WriteCompletion () -- Write Completion Routine
  */
-LOCAL void mbboDevAbDf1WriteCompletion (abDf1ElemIO *pIO, long status)
+LOCAL void mbboDevAbDf1WriteCompletion (abDf1ElemIO *pIO, epicsInt32 status)
 {
       struct mbboRecord *pmbbo = (struct mbboRecord *) pIO->pRec;
       struct rset *prset = (struct rset *) (pmbbo->rset);
@@ -2006,8 +2043,8 @@ LOCAL void mbboDevAbDf1NewValue (abDf1ElemIO *pIO)
       struct mbboRecord *pmbbo = (struct mbboRecord *) pIO->pRec;
       struct rset *prset = (struct rset *) (pmbbo->rset);
       unsigned scanRequired = FALSE;
-      long status = S_devAbDf1_OK;
-      uint16_t rval;
+      epicsInt32 status = S_devAbDf1_OK;
+      epicsUInt16 rval;
 
       /*
        * no updates when asynch write in progress
@@ -2022,13 +2059,13 @@ LOCAL void mbboDevAbDf1NewValue (abDf1ElemIO *pIO)
       if (status == S_drvAbDf1_OK) {
             if (pmbbo->rval!=rval || pmbbo->sevr>=INVALID_ALARM) {
 
-                  pmbbo->rval = (long) rval;
+                  pmbbo->rval = (epicsInt32) rval;
 
                   if (pmbbo->shft>0) rval >>= pmbbo->shft;
 
                   if (pmbbo->sdef){
-                        unsigned long *pstate_values;
-                        unsigned short i;
+                        epicsUInt32 *pstate_values;
+                        epicsUInt16 i;
 
                         pstate_values = &(pmbbo->zrvl);
                         for (i = 0u; i < 16u; i++){
@@ -2042,7 +2079,7 @@ LOCAL void mbboDevAbDf1NewValue (abDf1ElemIO *pIO)
                   }
                   else{
                         /* the raw  is the desired val */
-                        pmbbo->val =  (unsigned short) rval;
+                        pmbbo->val =  (epicsUInt16) rval;
                         pmbbo->udf = FALSE;
                         scanRequired = TRUE;
                   }

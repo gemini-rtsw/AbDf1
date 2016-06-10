@@ -143,20 +143,20 @@
 /*
  *  Common Device Support Routines
  */
-typedef long devInit (unsigned);
-typedef long devGetIoIntInfo (int, dbCommon*,  IOSCANPVT*);
+typedef epicsInt32 devInit (unsigned);
+typedef epicsInt32 devGetIoIntInfo (int, dbCommon*,  IOSCANPVT*);
 
 /*****************************************************************************/
 /* Device Support for Analog Input (ai) Records                              */
 /*****************************************************************************/
 
-typedef long aiDevReport (struct aiRecord *, unsigned);
-typedef long aiDevInitRec (struct aiRecord *);
-typedef long aiDevRead (struct aiRecord *);
-typedef long aiDevLinearConv (struct aiRecord *, int);
+typedef epicsInt32 aiDevReport (struct aiRecord *, unsigned);
+typedef epicsInt32 aiDevInitRec (struct aiRecord *);
+typedef epicsInt32 aiDevRead (struct aiRecord *);
+typedef epicsInt32 aiDevLinearConv (struct aiRecord *, int);
 
 typedef struct /* ai_dev_sup */ {
-      long                   number;
+      epicsInt32                   number;
       aiDevReport           *report;
       devInit               *init;
       aiDevInitRec          *initRec;
@@ -180,14 +180,14 @@ extern ai_dev_sup devAiAbDf1_fp; /* floating point AB ai Record */
 /* Device Support for Analog Output (ao) Records                             */
 /*****************************************************************************/
 
-typedef long aoDevReport (struct aoRecord *, unsigned);
-typedef long aoDevInit (unsigned);
-typedef long aoDevInitRec (struct aoRecord *);
-typedef long aoDevWrite (struct aoRecord *);
-typedef long aoDevLinearConv (struct aoRecord *, int);
+typedef epicsInt32 aoDevReport (struct aoRecord *, unsigned);
+typedef epicsInt32 aoDevInit (unsigned);
+typedef epicsInt32 aoDevInitRec (struct aoRecord *);
+typedef epicsInt32 aoDevWrite (struct aoRecord *);
+typedef epicsInt32 aoDevLinearConv (struct aoRecord *, int);
 
 typedef struct /* ao_dev_sup */ {
-      long               number;
+      epicsInt32               number;
       aoDevReport       *report;
       devInit           *init;
       aoDevInitRec      *initRec;
@@ -206,13 +206,13 @@ extern ao_dev_sup devAoAbDf1_s16; /* 16-bit signed AB ao Record */
 /* Device Support for Binary Input (bi) Records                              */
 /*****************************************************************************/
 
-typedef long biDevReport (struct biRecord *, unsigned);
-typedef long biDevInit (unsigned);
-typedef long biDevInitRec (struct biRecord *);
-typedef long biDevRead (struct biRecord *);
+typedef epicsInt32 biDevReport (struct biRecord *, unsigned);
+typedef epicsInt32 biDevInit (unsigned);
+typedef epicsInt32 biDevInitRec (struct biRecord *);
+typedef epicsInt32 biDevRead (struct biRecord *);
 
 typedef struct /* bi_dev_sup */{
-      long               number;
+      epicsInt32               number;
       biDevReport       *report;
       devInit           *init;
       biDevInitRec      *initRec;
@@ -225,13 +225,13 @@ extern bi_dev_sup devBiAbDf1;
 /*****************************************************************************/
 /* Device Support for Binary Output (bo) Records                             */
 /*****************************************************************************/
-typedef long boDevReport (struct boRecord *, unsigned);
-typedef long boDevInit (unsigned);
-typedef long boDevInitRec (struct boRecord *);
-typedef long boDevWrite (struct boRecord *);
+typedef epicsInt32 boDevReport (struct boRecord *, unsigned);
+typedef epicsInt32 boDevInit (unsigned);
+typedef epicsInt32 boDevInitRec (struct boRecord *);
+typedef epicsInt32 boDevWrite (struct boRecord *);
 
 typedef struct /* bo_dev_sup */ {
-      long               number;
+      epicsInt32               number;
       boDevReport       *report;
       devInit           *init;
       boDevInitRec      *initRec;
@@ -245,13 +245,13 @@ extern bo_dev_sup devBoAbDf1;
 /* Device Support for Mulit-Bit Binary Input (mbbi) Records                  */
 /*****************************************************************************/
 
-typedef long mbbiDevReport (struct mbbiRecord *, unsigned);
-typedef long mbbiDevInit (unsigned);
-typedef long mbbiDevInitRec (struct mbbiRecord *);
-typedef long mbbiDevRead (struct mbbiRecord *);
+typedef epicsInt32 mbbiDevReport (struct mbbiRecord *, unsigned);
+typedef epicsInt32 mbbiDevInit (unsigned);
+typedef epicsInt32 mbbiDevInitRec (struct mbbiRecord *);
+typedef epicsInt32 mbbiDevRead (struct mbbiRecord *);
 
 typedef struct /* mbbi_dev_sup */ {
-      long                  number;
+      epicsInt32                  number;
       mbbiDevReport        *report;
       devInit              *init;
       mbbiDevInitRec       *initRec;
@@ -265,13 +265,13 @@ extern mbbi_dev_sup devMbbiAbDf1;
 /* Device Support for Multi-Bit Binary Output (mbbo) Records                 */
 /*****************************************************************************/
 
-typedef long mbboDevReport (struct mbboRecord *, unsigned);
-typedef long mbboDevInit (unsigned);
-typedef long mbboDevInitRec (struct mbboRecord *);
-typedef long mbboDevWrite (struct mbboRecord *);
+typedef epicsInt32 mbboDevReport (struct mbboRecord *, unsigned);
+typedef epicsInt32 mbboDevInit (unsigned);
+typedef epicsInt32 mbboDevInitRec (struct mbboRecord *);
+typedef epicsInt32 mbboDevWrite (struct mbboRecord *);
 
 typedef struct /* mbbo_dev_sup */ {
-      long                  number;
+      epicsInt32                  number;
       mbboDevReport        *report;
       devInit              *init;
       mbboDevInitRec       *initRec;

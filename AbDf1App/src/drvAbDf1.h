@@ -150,12 +150,18 @@ typedef struct  drvAbDf1FuncTable       drvAbDf1FuncTable;
 /*
  * Function Type Declarations
  */
-typedef void (*devAbDf1WriteCompletionFunc) (abDf1ElemIO*, long);
+typedef void (*devAbDf1WriteCompletionFunc) (abDf1ElemIO*, epicsInt32);
 typedef void (*devAbDf1NewCacheValueFunc) (abDf1ElemIO *);
 typedef void (*devAbDf1CurrentWriteValueFunc) (abDf1ElemIO*, abDf1Value*);
-typedef long (*devAbDf1ParseAddressFunc) (const char *address, int *fileType, int *dataType, 
-            int *fileNumber, int *element, int *subelement, int *bitNum, 
-            int *elementSize, int *structured);
+typedef epicsInt32 (*devAbDf1ParseAddressFunc) (const char *address, 
+                                                 int *fileType, 
+                                                 int *dataType, 
+                                                 int *fileNumber, 
+                                                 int *element, 
+                                                 int *subelement, 
+                                                 int *bitNum, 
+                                                 int *elementSize, 
+                                                 int *structured);
 
 /* 
  * drvAbDf1NewElemIOFunc must initialize (or at least clear) 
@@ -238,6 +244,8 @@ struct abDf1ElemIO {
 };
 
 
+extern drvAbDf1FuncTable drvAbDf1Func;
+
 /*****************************************************************************/
 /*  Driver Message Code Definitions                                          */
 /*****************************************************************************/
@@ -252,7 +260,7 @@ struct abDf1ElemIO {
 #define S_drvAbDf1_linkDown             (M_drvAbDf1 | 3)  /* serial link is down */
 #define S_drvAbDf1_noMemory             (M_drvAbDf1 | 4)  /* out of dynamic memory*/
 #define S_drvAbDf1_badFrame             (M_drvAbDf1 | 5)  /* corrupt input frame */
-#define S_drvAbDf1_mutexTMO            (M_drvAbDf1 | 6) /* timed out waiting for mutex lock  */
+#define S_drvAbDf1_mutexTMO             (M_drvAbDf1 | 6)  /* timed out waiting for mutex lock  */
 #define S_drvAbDf1_notSubscribed        (M_drvAbDf1 | 9)  /* data point has not been subscribed */
 #define S_drvAbDf1_badNodeNumber        (M_drvAbDf1 | 10) /* invalid node number */
 #define S_drvAbDf1_xmitTMO              (M_drvAbDf1 | 11) /* frame timed out in request queue */

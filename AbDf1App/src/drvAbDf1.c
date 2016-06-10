@@ -2909,6 +2909,7 @@ drvAbDf1ProcessResp (drvAbDf1Parm *pDev, drvSerialResponse *pResp)
 {
    /* abDf1Proto *pProto = (abDf1Proto *) pResp->buf; */ /* causes strict aliasing problems */
    abDf1Proto Proto;  
+   /* abDf1Proto *pProto = (abDf1Proto *) pResp->buf; */
    unsigned frameLength = pResp->bufCount;
    int status;
    absTransaction *pTrans;
@@ -4663,7 +4664,8 @@ epicsInt32 drvAbDf1ReadWord (abDf1ElemIO *pDevElemIO, epicsUInt16 *pVal)
    drvAbDf1ElemIO *pElemIO = devToDrvElemIOPtr (pDevElemIO);
    absBlockIO   *pIO = pElemIO->pBIO;
    epicsUInt16 work;
-   df1Word *pWords;
+   /* df1Word *pWords; */
+   char *pWords;
    epicsInt32 status;
 
    if (!pIO) {
@@ -4677,10 +4679,11 @@ epicsInt32 drvAbDf1ReadWord (abDf1ElemIO *pDevElemIO, epicsUInt16 *pVal)
     * verify data type and range of the request
     */
    status = drvAbDf1VerifyTypeAndRange (pIO, df1DTInt, pElemIO->elemNo, 
-               pElemIO->subElemNo, 1u, (char **)&pWords);
+                pElemIO->subElemNo, 1u, &pWords);
    if (status) {
       return status;
    }
+
 
    /*
     * MUTEX used here to force ls and ms bytes
@@ -4690,9 +4693,9 @@ epicsInt32 drvAbDf1ReadWord (abDf1ElemIO *pDevElemIO, epicsUInt16 *pVal)
       return S_drvAbDf1_mutexTMO;
    }
 
-   work = pWords->msData;
+   work = ((df1Word *)pWords)->msData;
    work <<= NBBY;
-   work |= pWords->lsData;
+   work |= ((df1Word *)pWords)->lsData;
    *pVal = work;
 
    /*
@@ -4710,7 +4713,7 @@ epicsInt32 drvAbDf1ReadReal (abDf1ElemIO *pDevElemIO, float *pVal)
 {
    drvAbDf1ElemIO *pElemIO = devToDrvElemIOPtr (pDevElemIO);
    absBlockIO   *pIO = pElemIO->pBIO;
-   epicsUInt8 *pElem;
+   char *pElem;
    union {
       float fval;
       epicsUInt32 ival;
@@ -4728,7 +4731,7 @@ epicsInt32 drvAbDf1ReadReal (abDf1ElemIO *pDevElemIO, float *pVal)
     * verify data type and range of the request
     */
    status = drvAbDf1VerifyTypeAndRange (pIO, df1DTFP, pElemIO->elemNo, 
-                  pElemIO->subElemNo, 1u, (char **) &pElem);
+                  pElemIO->subElemNo, 1u, &pElem);
    if (status) {
       return status;
    }
@@ -4744,13 +4747,13 @@ epicsInt32 drvAbDf1ReadReal (abDf1ElemIO *pDevElemIO, float *pVal)
       return S_drvAbDf1_mutexTMO;
    }
 
-   work.ival = pElem[3];
+   work.ival = (unsigned char)pElem[3];
    work.ival <<= NBBY;
-   work.ival |= pElem[2];
+   work.ival |= (unsigned char)pElem[2];
    work.ival <<= NBBY;
-   work.ival |= pElem[1];
+   work.ival |= (unsigned char)pElem[1];
    work.ival <<= NBBY;
-   work.ival |= pElem[0];
+   work.ival |= (unsigned char)pElem[0];
    *pVal = work.fval;
 
    /*
@@ -4770,7 +4773,7 @@ LOCAL epicsUInt32 drvAbDf1ReadBlock (absBlockIO *pIO, unsigned df1DT,
          unsigned elemNo, unsigned subElemNo, unsigned nElem, epicsUInt8 *pBuf)
 {
    epicsUInt32 status;
-   epicsUInt8 *pElem;
+   char *pElem;
 
    if (!pIO) {
       return S_drvAbDf1_notSubscribed;
@@ -4783,7 +4786,7 @@ LOCAL epicsUInt32 drvAbDf1ReadBlock (absBlockIO *pIO, unsigned df1DT,
     * verify data type and range of the request
     */
    status = drvAbDf1VerifyTypeAndRange (pIO, df1DT, 
-                        elemNo, subElemNo, nElem, (char **) &pElem);
+                        elemNo, subElemNo, nElem, &pElem);
    if (status) {
       return status;
    }
@@ -4848,7 +4851,7 @@ epicsInt32 drvAbDf1InitiateWrite (abDf1ElemIO *pDevElemIO)
        */
       status = drvAbDf1VerifyTypeAndRange (pIO, pDevElemIO->dataType, 
                            pElemIO->elemNo, pElemIO->subElemNo, 
-                           1u, (char **)NULL);
+                           1u, NULL);
       if (status) {
          return status;
       }
@@ -5036,7 +5039,7 @@ LOCAL epicsUInt32 drvAbDf1WriteBlockRaw (absBlockIO *pIO, unsigned df1DT,
          unsigned elemNo, unsigned subElemNo, unsigned nElem, 
          const epicsUInt8 *pBuf, unsigned typed)
 {
-   epicsUInt8 *pCache;
+   char *pCache;
    drvAbDf1ElemIO **ppElemIO;
    unsigned i;
    epicsUInt32 status;
@@ -5045,7 +5048,7 @@ LOCAL epicsUInt32 drvAbDf1WriteBlockRaw (absBlockIO *pIO, unsigned df1DT,
     * verify data type and range of the request
     */
    status = drvAbDf1VerifyTypeAndRange (pIO, df1DT, 
-                        elemNo, subElemNo, nElem, (char **) &pCache);
+                        elemNo, subElemNo, nElem, &pCache);
    if (status) {
       return status;
    }
@@ -5144,7 +5147,7 @@ LOCAL epicsUInt32 drvAbDf1WriteBitsRaw (absBlockIO *pIO,
          unsigned elemNo, unsigned subElemNo, epicsUInt8 *pVal, epicsUInt8 *pMask)
 {
    drvAbDf1ElemIO *pElemIO;
-   epicsUInt8 *pData;
+   char *pData;
    unsigned netChange;
    unsigned i;
    epicsInt32 status;
@@ -5153,7 +5156,7 @@ LOCAL epicsUInt32 drvAbDf1WriteBitsRaw (absBlockIO *pIO,
     * verify data type and range of the request
     */
    status = drvAbDf1VerifyTypeAndRange (pIO, df1DTBit, 
-                        elemNo, subElemNo, 1u, (char **) &pData);
+                        elemNo, subElemNo, 1u, &pData);
    if (status) {
       return status;
    }
@@ -5174,7 +5177,7 @@ LOCAL epicsUInt32 drvAbDf1WriteBitsRaw (absBlockIO *pIO,
 
       epicsUInt8 work = pData[i];
       work = (work & ~pMask[i]) | (pVal[i] & pMask[i]);
-      if (pData[i] != work) {
+      if ((unsigned char)pData[i] != work) {
          netChange = TRUE;
          pData[i] = work;
       }
@@ -5218,7 +5221,6 @@ drvAbDf1ReadBitString (abDf1ElemIO *pDevElemIO, epicsUInt16 mask,
    absBlockIO   *pIO = pElemIO->pBIO;
    epicsUInt16 work;
    char *pData;
-   df1Word *pDf1WordData;
    epicsInt32 status;
 
    if (!pIO) {
@@ -5252,10 +5254,9 @@ drvAbDf1ReadBitString (abDf1ElemIO *pDevElemIO, epicsUInt16 mask,
    if(epicsMutexLock(pIO->pFile->pPLC->pDev->mutex) != epicsMutexLockOK) {
       return S_drvAbDf1_mutexTMO;
    }
-   pDf1WordData = (df1Word *)pData;
-   work = pDf1WordData->msData;
+   work = ((df1Word *)pData)->msData;
    work <<= NBBY;
-   work |= pDf1WordData->lsData;
+   work |= ((df1Word *)pData)->lsData;
 
    *pVal = work & mask;
 
@@ -6766,7 +6767,11 @@ LOCAL epicsInt32 parseAbDf1Address (const char *pAddr, drvAbDf1Parm **ppDev,
    /*
     * remove white space
     */
-   while (isspace(*pAddr)) {
+    /* 2016-06-09 MDW added cast to int here and 2 other places below to
+     *                 avoid spurious warning "array subscript has type 'char'" 
+     *                 (It's a bug in the GCC isspace() and isgraph() macros)
+     */
+   while (isspace((unsigned char)*pAddr)) { 
       pAddr++;
    }
 
@@ -6775,7 +6780,7 @@ LOCAL epicsInt32 parseAbDf1Address (const char *pAddr, drvAbDf1Parm **ppDev,
     * (and move the string pointer to the next field)
     */
    pFile = link;
-   while (isgraph(*pAddr) && pFile<&link[sizeof(link)-1]) {
+   while (isgraph((unsigned char)*pAddr) && pFile < &link[sizeof(link)-1]) {
       *pFile++ = *pAddr++;
    }
    *pFile = '\0';
@@ -6844,7 +6849,7 @@ LOCAL epicsInt32 parseAbDf1Address (const char *pAddr, drvAbDf1Parm **ppDev,
        * white space
        */
       while (*pStr) {
-         if (!isspace(*pStr++)) {
+         if (!isspace((unsigned char)*pStr++)) {
             return S_drvAbDf1_addrGarbage;
          }
       }
