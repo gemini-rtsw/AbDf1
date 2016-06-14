@@ -81,6 +81,7 @@
 #include    <menuScan.h>
 #include    <devLib.h>
 #include    <recGbl.h>
+#include    <epicsExport.h>
 
 /*
  * DF-1 Protocol
@@ -846,6 +847,7 @@ ai_dev_sup devAiAbDf1 = {       /* Generic AB ai Record (defaults to unsigned 12
       aiDevReadUnsignedAbDf1,
       aiDevLinearConvertAbDf1_12
       };
+epicsExportAddress(dset,devAiAbDf1);
 
 ai_dev_sup devAiAbDf1_12 = {    /* unsigned 12-bit AB ai Record              */
       6,
@@ -856,6 +858,7 @@ ai_dev_sup devAiAbDf1_12 = {    /* unsigned 12-bit AB ai Record              */
       aiDevReadUnsignedAbDf1,
       aiDevLinearConvertAbDf1_12
       };
+epicsExportAddress(dset,devAiAbDf1_12);
 
 ai_dev_sup devAiAbDf1_s12 = {    /* signed 12-bit AB ai Record              */
       6,
@@ -866,6 +869,7 @@ ai_dev_sup devAiAbDf1_s12 = {    /* signed 12-bit AB ai Record              */
       aiDevReadSignedAbDf1,
       aiDevLinearConvertAbDf1_12
       };
+epicsExportAddress(dset,devAiAbDf1_s12);
 
 ai_dev_sup devAiAbDf1_16 = {    /* unsigned 16-bit AB ai Record              */
       6,
@@ -876,6 +880,7 @@ ai_dev_sup devAiAbDf1_16 = {    /* unsigned 16-bit AB ai Record              */
       aiDevReadUnsignedAbDf1,
       aiDevLinearConvertAbDf1_16
       };
+epicsExportAddress(dset,devAiAbDf1_16);
 
 ai_dev_sup devAiAbDf1_s16 = {    /* signed 16-bit AB ai Record                */
       6,
@@ -886,6 +891,7 @@ ai_dev_sup devAiAbDf1_s16 = {    /* signed 16-bit AB ai Record                */
       aiDevReadSignedAbDf1,
       aiDevLinearConvertAbDf1_16
       };
+epicsExportAddress(dset,devAiAbDf1_s16);
 
 /*
  * !! we change all other ai DSETs installed by the DTYP field to this DSET during 
@@ -900,6 +906,7 @@ ai_dev_sup devAiAbDf1_fp = {    /* floating point AB ai Record */
       aiDevReadFloatAbDf1,
       aiDevLinearConvertAbDf1_16 /* liniear convert isnt used if its floating point */
       };
+epicsExportAddress(dset,devAiAbDf1_fp);
 
 /* Device CallBack Table (floating point) */
 devAbDf1FuncTable aiDevAbDf1FloatCallBacks = {
@@ -1148,6 +1155,7 @@ ao_dev_sup devAoAbDf1 = {       /* Generic AB ao Record (defaults to 12-bit sign
       aoDevWriteAbDf1,
       aoDevLinearConvertAbDf1_12
 };
+epicsExportAddress(dset, devAoAbDf1);
 
 ao_dev_sup devAoAbDf1_12 = {    /* 12-bit unsigned AB ao Record              */
       6,
@@ -1158,6 +1166,7 @@ ao_dev_sup devAoAbDf1_12 = {    /* 12-bit unsigned AB ao Record              */
       aoDevWriteAbDf1,
       aoDevLinearConvertAbDf1_12
 };
+epicsExportAddress(dset, devAoAbDf1_12);
 
 ao_dev_sup devAoAbDf1_s12 = {    /* 12-bit signed AB ao Record               */
       6,
@@ -1168,6 +1177,7 @@ ao_dev_sup devAoAbDf1_s12 = {    /* 12-bit signed AB ao Record               */
       aoDevWriteAbDf1,
       aoDevLinearConvertAbDf1_12
 };
+epicsExportAddress(dset, devAoAbDf1_s12);
 
 ao_dev_sup devAoAbDf1_16 = {    /* 16-bit unsigned AB ao Record              */
       6,
@@ -1178,6 +1188,7 @@ ao_dev_sup devAoAbDf1_16 = {    /* 16-bit unsigned AB ao Record              */
       aoDevWriteAbDf1,
       aoDevLinearConvertAbDf1_16
 };
+epicsExportAddress(dset, devAoAbDf1_16);
 
 ao_dev_sup devAoAbDf1_s16 = {    /* 16-bit signed AB ao Record               */
       6,
@@ -1188,6 +1199,7 @@ ao_dev_sup devAoAbDf1_s16 = {    /* 16-bit signed AB ao Record               */
       aoDevWriteAbDf1,
       aoDevLinearConvertAbDf1_16
 };
+epicsExportAddress(dset, devAoAbDf1_s16);
 
 /* Device CallBack Table */
 LOCAL devAbDf1FuncTable aoDevAbDf1FloatCallBacks = {
@@ -1552,6 +1564,7 @@ bi_dev_sup devBiAbDf1 = {
       devGetIoIntInfoAbDf1,
       biDevReadAbDf1
 };
+epicsExportAddress(dset, devBiAbDf1);
 
 LOCAL devAbDf1FuncTable bidevAbDf1FuncTable = {
       dummyWriteCompletion,
@@ -1658,6 +1671,7 @@ bo_dev_sup devBoAbDf1 = {
       devGetIoIntInfoAbDf1,
       boDevWriteAbDf1
 };
+epicsExportAddress(dset, devBoAbDf1);
 
 LOCAL devAbDf1FuncTable bodevAbDf1FuncTable = {
       boDevAbDf1WriteCompletion,
@@ -1831,6 +1845,7 @@ mbbi_dev_sup devMbbiAbDf1 = {
       devGetIoIntInfoAbDf1,
       mbbiDevReadAbDf1
 };
+epicsExportAddress(dset, devMbbiAbDf1);
 
 LOCAL devAbDf1FuncTable mbbidevAbDf1FuncTable = {
       dummyWriteCompletion,
@@ -1936,6 +1951,7 @@ mbbo_dev_sup devMbboAbDf1 = {
       devGetIoIntInfoAbDf1,
       mbboDevWriteAbDf1
 };
+epicsExportAddress(dset, devMbboAbDf1);
 
 LOCAL devAbDf1FuncTable mbbodevAbDf1FuncTable = {
       mbboDevAbDf1WriteCompletion,

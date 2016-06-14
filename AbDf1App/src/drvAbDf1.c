@@ -170,8 +170,9 @@
 #include <epicsThread.h>
 #include <epicsEvent.h>
 #include <epicsTime.h>
-
+#include <drvSup.h>
 #include <drvSerial.h>
+#include <iocsh.h>
 
 #include "drvAbDf1.h"
 
@@ -205,7 +206,7 @@
  * serial port (see notes at the top o this file)
  */
 unsigned drvAbDf1SrcStationNumber = 012;
-epicsExportAddress(unsigned, drvAbDf1SrcStationNumber);
+epicsExportAddress(int, drvAbDf1SrcStationNumber);
 
 /*
  * The default read block IO scan period
@@ -226,7 +227,7 @@ epicsExportAddress(double, drvAbDf1DefaultScanPeriod_mS);
  * increasing detail with increasing magnitude of drvAbDf1Debug
  */
 unsigned drvAbDf1Debug = 0;
-epicsExportAddress(unsigned, drvAbDf1Debug);
+epicsExportAddress(int, drvAbDf1Debug);
 
 /*
  * The maximum outstanding requests (the maximum simultaneous
@@ -240,7 +241,7 @@ epicsExportAddress(unsigned, drvAbDf1Debug);
  * parameter
  */
 unsigned drvAbDf1MaxOutstandingRequest = 16u;
-epicsExportAddress(unsigned, drvAbDf1MaxOutstandingRequest);
+epicsExportAddress(int, drvAbDf1MaxOutstandingRequest);
 
 /*
  * Set the local node number for a specified port
@@ -954,19 +955,19 @@ LOCAL struct {
  */
 typedef epicsInt32    drvInitFunc_t (void);
 typedef epicsInt32    drvReportFunc_t (int level);
-LOCAL drvReportFunc_t drvAbDf1Report;
-LOCAL drvInitFunc_t drvAbDf1Init;
-struct
-{
-   epicsInt32            number;
-   drvReportFunc_t *report;
-   drvInitFunc_t  *init;
+LOCAL long drvAbDf1Report(int);
+LOCAL long drvAbDf1Init();
+struct {
+   long         number;
+   DRVSUPFUN    report;
+   DRVSUPFUN    init;
 }               drvAbDf1 =
 {
-   2L,
+   2,
    drvAbDf1Report,
    drvAbDf1Init
 };
+epicsExportAddress(drvet, drvAbDf1);
 
 /* 
  * initialize (or at least clear) 
@@ -1187,7 +1188,7 @@ LOCAL int drvAbDf1DebugPrintf (unsigned level, char *pformat, ...)
 /*
  * drvAbDf1Init()
  */
-LOCAL epicsInt32 drvAbDf1Init(void)
+LOCAL long drvAbDf1Init(void)
 {
    drvAbDf1Status status;
 
@@ -1221,7 +1222,7 @@ LOCAL epicsInt32 drvAbDf1Init(void)
 /*
  * drvAbDf1Report()
  */
-LOCAL epicsInt32 drvAbDf1Report(int level)
+LOCAL long  drvAbDf1Report(int level)
 {
    drvAbDf1Parm  *pDev;
    epicsMutexLockStatus status;
@@ -1941,8 +1942,9 @@ LOCAL void drvAbDf1InitiateLink (drvAbDf1Parm *pDev)
          );
       if (!pDev->taskId) {
          errMessage (S_dev_noMemory,
-               ":drvABInitiateScan() taskSpawn()");
+               ":drvABInitiateScan() epicsThreadCreate()");
          epicsMutexUnlock(pDev->mutex);
+
          return;
       }
 
@@ -1969,12 +1971,14 @@ LOCAL void drvAbDf1Scan (void *p)
    drvAbDf1Parm *pDev = (drvAbDf1Parm *)p;
    absBlockIO *pIO;
    epicsMutexLockStatus status;
+   epicsEventWaitStatus waitstatus;
    float delay = 0.0;             /* don't wait to be signalled for initial read */
    epicsTimeStamp timeNow;
 
    while (TRUE) {
 
-      epicsEventWaitWithTimeout(pDev->scanEvt, delay);
+      waitstatus = epicsEventWaitWithTimeout(pDev->scanEvt, delay);
+
 
       /*
        * process all responses pending in drvSerial
@@ -1987,6 +1991,7 @@ LOCAL void drvAbDf1Scan (void *p)
           * we will delay at least MUTEX_TMO if
           * the mutex is unavailable
           */
+
          epicsThreadSleep(MUTEX_TMO);
          delay = 0.0;
          continue;
@@ -2003,7 +2008,6 @@ LOCAL void drvAbDf1Scan (void *p)
          pIO = (absBlockIO *) ellFirst (&pDev->scanList);
 
          if (!pIO) {
-
             epicsMutexUnlock(pDev->mutex);
 
             delay = RESPONSE_TMO/2.0;
@@ -2022,7 +2026,6 @@ LOCAL void drvAbDf1Scan (void *p)
          }
 #endif
          delay =  epicsTimeDiffInSeconds(&timeNow, &pIO->timeAtScanCompletion);
-  
 
          /*
           * scan blocks are stored in expiration order
@@ -2032,7 +2035,6 @@ LOCAL void drvAbDf1Scan (void *p)
             epicsMutexUnlock(pDev->mutex);
             break;
          }
-
          pTrans = drvAbDf1NewReadTrans (pIO);
          if (!pTrans) {
             epicsMutexUnlock(pDev->mutex);
@@ -2060,6 +2062,7 @@ LOCAL void drvAbDf1Scan (void *p)
             ellAdd (&pDev->pendingList, &pIO->node);
          }
          else {
+
             /*
              * the only failure is a mutex tmo
              * here which should never occur
@@ -2810,7 +2813,7 @@ LOCAL void drvAbDf1Read (drvAbDf1Parm *pDev)
     * check transactions pending transmission to see if
     * they will be accepted by drvSerial
     *
-    * note that requests waiting too be sent are not
+    * note that requests waiting to be sent are not
     * checked for TMO here because they will time out once they
     * reach the top of the queue if the PLC does not 
     * respond. The driver should just queue the requests
@@ -2845,7 +2848,6 @@ LOCAL void drvAbDf1Read (drvAbDf1Parm *pDev)
       copyOfId = pTrans->transId;
 
       epicsMutexUnlock (pDev->mutex);
-      assert (status==OK);
 
       /*
        * special care is taken to not have the lock
@@ -2859,7 +2861,6 @@ LOCAL void drvAbDf1Read (drvAbDf1Parm *pDev)
    }
 
    epicsMutexUnlock (pDev->mutex);
-   assert (status==OK);
 }
 
 /*
@@ -2915,7 +2916,10 @@ drvAbDf1ProcessResp (drvAbDf1Parm *pDev, drvSerialResponse *pResp)
    absTransaction *pTrans;
    unsigned id;
 
+
+   
    memcpy(&Proto, pResp->buf, sizeof(abDf1Proto));  /* to get around strict aliasing problem */
+   
 
    /*
     * reject messages that are not addressed to this station
@@ -2934,8 +2938,8 @@ drvAbDf1ProcessResp (drvAbDf1Parm *pDev, drvSerialResponse *pResp)
     */
    /* if (!(pProto->hdr.cmd&df1RespMask)) { 
       (*cmdJumpTable[pProto->hdr.cmd&df1CmdMask]) (pDev, pResp); */
-   if (!(Proto.hdr.cmd&df1RespMask)) {
-      (*cmdJumpTable[Proto.hdr.cmd&df1CmdMask]) (pDev, pResp);
+   if (!(Proto.hdr.cmd & df1RespMask)) {
+      (*cmdJumpTable[Proto.hdr.cmd & df1CmdMask]) (pDev, pResp);
       return;
    }
 
@@ -2957,7 +2961,6 @@ drvAbDf1ProcessResp (drvAbDf1Parm *pDev, drvSerialResponse *pResp)
 
    if (pTrans) {
       epicsMutexUnlock (pDev->mutex);
-      assert (status==OK);
    }
    else {
       /*
@@ -2965,7 +2968,6 @@ drvAbDf1ProcessResp (drvAbDf1Parm *pDev, drvSerialResponse *pResp)
        */
       pDev->dupResponseCount++;
       epicsMutexUnlock (pDev->mutex);
-      assert (status==OK);
       return;
    }
 
@@ -2998,7 +3000,7 @@ drvAbDf1ProcessResp (drvAbDf1Parm *pDev, drvSerialResponse *pResp)
 #endif
          drvAbDf1DebugPrintf(1,"recv cmd=%x resp from node %d w bad status \"%s\"\n", 
             /* pProto->hdr.cmd&df1CmdMask, pProto->hdr.src, buf); */
-            Proto.hdr.cmd&df1CmdMask, Proto.hdr.src, buf);
+            Proto.hdr.cmd & df1CmdMask, Proto.hdr.src, buf);
       }
 
       retireTransaction (pDev, id, epicsStatus);
@@ -3615,7 +3617,7 @@ LOCAL int drvAbDf1ReadNextMsgChar (FILE *fp, drvSerialResponse *pResp,
        * a DLE followed by a DLE is inserted into
        * the message as a single DLE character
        */
-      if (nc<(int)NELEMENTS(pDev->inHandlerList)) {
+      if (nc < (int)NELEMENTS(pDev->inHandlerList)) {
          status = (*pDev->inHandlerList[nc]) (fp, pResp, pDev);
       }
       else {
@@ -3623,6 +3625,14 @@ LOCAL int drvAbDf1ReadNextMsgChar (FILE *fp, drvSerialResponse *pResp,
       }
       return status;
    }
+
+{
+static int i = 0;
+printf("%02x ", nc);
+if (((i+1) % 16) == 0)
+   printf("\n");
+}
+
 
    if (pResp->bufCount>=NELEMENTS(pResp->buf)) {
       drvAbDf1DebugPrintf (1,"<-Msg too large (discarded)\n");
@@ -3723,6 +3733,7 @@ LOCAL int drvAbDf1ExpectedETX (FILE *fp, drvSerialResponse *pResp,
    unsigned checkSum;
    int c;
 
+printf("\n");
    drvAbDf1DebugPrintf (3,"<-ETX\n");
 
    /*
@@ -5795,7 +5806,7 @@ LOCAL drvAbDf1Status absDisposeTransaction (absTransaction *pTrans)
     * MUTEX ON/OFF around hash table / list use
     */
    status = epicsMutexLock(pDev->mutex);
-   if (status == epicsMutexLockOK) {
+   if (status != epicsMutexLockOK) {
       epicsPrintf ("%s:%d: unable to dispose transaction (mutex lock failed)\n", 
          __FILE__, __LINE__);
       return S_drvAbDf1_badTransId;
@@ -6917,4 +6928,37 @@ LOCAL epicsInt32 parseAbDf1Address (const char *pAddr, drvAbDf1Parm **ppDev,
    return S_drvAbDf1_OK;
 }
 
+
+
+/* Register the IOC Shell commands */
+static const iocshArg drvAbDf1SetLocalNodeNoArg0 = {"port name",      iocshArgString};
+static const iocshArg drvAbDf1SetLocalNodeNoArg1 = {"station number", iocshArgInt};
+static const iocshArg * const drvAbDf1SetLocalNodeNoArgs[] = 
+                  {&drvAbDf1SetLocalNodeNoArg0, &drvAbDf1SetLocalNodeNoArg1};
+static const iocshFuncDef drvAbDf1SetLocalNodeNoFuncDef = 
+                  { "drvAbDf1SetLocalNodeNo", 2, drvAbDf1SetLocalNodeNoArgs};
+
+static void drvAbDf1SetLocalNodeNoCallFunc(const iocshArgBuf *args)
+{
+      drvAbDf1SetLocalNodeNo(args[0].sval, args[1].ival );
+}
+
+static const iocshArg drvAbDf1SetScanPeriodArg0 = {"port name", iocshArgString};
+static const iocshArg drvAbDf1SetScanPeriodArg1 = {"station number", iocshArgInt};
+static const iocshArg drvAbDf1SetScanPeriodArg2 = {"file number", iocshArgInt}; 
+static const iocshArg drvAbDf1SetScanPeriodArg3 = {"scan period (mS)", iocshArgInt};
+static const iocshArg * const drvAbDf1SetScanPeriodArgs[] = {
+                         &drvAbDf1SetScanPeriodArg0, &drvAbDf1SetScanPeriodArg1,
+                         &drvAbDf1SetScanPeriodArg2, &drvAbDf1SetScanPeriodArg3};
+static const iocshFuncDef drvAbDf1SetScanPeriodFuncDef = 
+                 {"drvAbDf1SetScanPeriod", 4, drvAbDf1SetScanPeriodArgs};
+static void drvAbDf1SetScanPeriodCallFunc(const iocshArgBuf *args)
+{
+     drvAbDf1SetScanPeriod(args[0].sval, args[1].ival, args[2].ival, args[3].ival);
+}
+static void drvAbDf1CommandsRegister(void) {
+   iocshRegister(&drvAbDf1SetLocalNodeNoFuncDef, drvAbDf1SetLocalNodeNoCallFunc);
+   iocshRegister(&drvAbDf1SetScanPeriodFuncDef, drvAbDf1SetScanPeriodCallFunc);
+}
+epicsExportRegistrar(drvAbDf1CommandsRegister);
 
