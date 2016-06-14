@@ -1239,62 +1239,62 @@ LOCAL long  drvAbDf1Report(int level)
       while (pDev)
       {
          double delay;
-         printf("\tAB DF1 Link over %s\n",
+         epicsPrintf("\tAB DF1 Link over %s\n",
             pDev->pName);
          if (level > 0) {
-            printf("\t\tneg acks sent=%u (damaged frame or lcl buf full)\n",
+            epicsPrintf("\t\tneg acks sent=%u (damaged frame or lcl buf full)\n",
                pDev->nakSendCount);
-            printf("\t\tdamaged frames received=%u\n",
+            epicsPrintf("\t\tdamaged frames received=%u\n",
                pDev->damagedFrameCount);
-            printf("\t\tneg acks recv=%u (damaged frame or rmt buf full)\n",
+            epicsPrintf("\t\tneg acks recv=%u (damaged frame or rmt buf full)\n",
                pDev->nakRecvCount);
-            printf("\t\tRequests that timed out with no ACK/NAK response %u\n",
+            epicsPrintf("\t\tRequests that timed out with no ACK/NAK response %u\n",
                pDev->enqTimeoutCount);
-            printf("\t\tRequests that timed out with too many NAKs %u\n",
+            epicsPrintf("\t\tRequests that timed out with too many NAKs %u\n",
                pDev->nakTimeoutCount);
-            printf("\t\tRequests that timed out lacking a response %u\n",
+            epicsPrintf("\t\tRequests that timed out lacking a response %u\n",
                pDev->responseTimeoutCount);
-            printf("\t\tDuplicate responses %u\n",
+            epicsPrintf("\t\tDuplicate responses %u\n",
                pDev->dupResponseCount);
-            printf("\t\tBad control char received %u\n",
+            epicsPrintf("\t\tBad control char received %u\n",
                pDev->badControlRecvCount);
             delay = pDev->smoothedDelayToReadSend;
 //            delay /= sysClkRateGet();
-            printf("\t\tSmoothed delay to read send begin %f sec\n",
+            epicsPrintf("\t\tSmoothed delay to read send begin %f sec\n",
                delay);
             delay = pDev->maxDelayToReadSend;
 //            delay /= sysClkRateGet();
-            printf("\t\tMax delay to read send begin %f sec\n",
+            epicsPrintf("\t\tMax delay to read send begin %f sec\n",
                delay);
             delay = pDev->smoothedDelayToWriteSend;
 //            delay /= sysClkRateGet();
-            printf("\t\tSmoothed delay to write send begin %f sec\n",
+            epicsPrintf("\t\tSmoothed delay to write send begin %f sec\n",
                delay);
             delay = pDev->maxDelayToWriteSend;
 //            delay /= sysClkRateGet();
-            printf("\t\tMax delay to write send begin %f sec\n",
+            epicsPrintf("\t\tMax delay to write send begin %f sec\n",
                delay);
             delay = pDev->smoothedDelayToResp;
 //            delay /= sysClkRateGet();
-            printf("\t\tSmoothed delay to resp %f sec\n",
+            epicsPrintf("\t\tSmoothed delay to resp %f sec\n",
                delay);
             delay = pDev->maxDelayToResp;
 //            delay /= sysClkRateGet();
-            printf("\t\tMax delay to resp %f sec\n",
+            epicsPrintf("\t\tMax delay to resp %f sec\n",
                delay);
-            printf ("\t\tTotal frames transmitted %u\n",
+            epicsPrintf ("\t\tTotal frames transmitted %u\n",
                pDev->totFramesSent);
-            printf ("\t\tTotal frames received %u\n",
+            epicsPrintf ("\t\tTotal frames received %u\n",
                pDev->totFramesRecv);
          }
          if (level > 3) {
-            printf("\t\tmutex ");
+            epicsPrintf("\t\tmutex ");
             epicsMutexShow(pDev->mutex, level);
-            printf("\t\tackEvt");
+            epicsPrintf("\t\tackEvt");
             epicsEventShow(pDev->ackEvt, level);
-            printf("\t\tscanEvt");
+            epicsPrintf("\t\tscanEvt");
             epicsEventShow(pDev->scanEvt, level);
-            printf("\t\ttransaction id hash table");
+            epicsPrintf("\t\ttransaction id hash table");
             bucketShow(pDev->pTransBucket);
             if (pDev->pLocalHashList) {
                showLocalHashList (pDev, level);
@@ -1338,7 +1338,7 @@ LOCAL void showLocalHashList (drvAbDf1Parm *pDev, unsigned level)
    unsigned i;
    unsigned maxEntries = 0u;
 
-   printf("\t\tlocal variable hash table\n");
+   epicsPrintf("\t\tlocal variable hash table\n");
 
    for (i=0u; i<pDev->localHashSize; i++) {
       unsigned listCount = (unsigned)
@@ -1349,7 +1349,7 @@ LOCAL void showLocalHashList (drvAbDf1Parm *pDev, unsigned level)
             &pDev->pLocalHashList[i], "local", level);
       }
    }
-   printf("\t\tlocal variable hash table has max=%u entries id\n",
+   epicsPrintf("\t\tlocal variable hash table has max=%u entries id\n",
       maxEntries);
 }
                
@@ -1363,11 +1363,10 @@ LOCAL void drvAbDf1ReportTransactions (drvAbDf1Parm *pDev, ELLLIST *pList, const
    epicsMutexLockStatus status;
    epicsTimeStamp timeNow;
 
-   printf ("\t\ttransactions in %s list (count=%u):\n", pName, ellCount(pList));
+   epicsPrintf ("\t\ttransactions in %s list (count=%u):\n", pName, ellCount(pList));
    status = epicsMutexLock(pDev->mutex);
    if (status != epicsMutexLockOK) {
       errPrintf(status, __FILE__, __LINE__, "Mutex lock failed");
-      printf ("\tMutex lock failed\n");
       return;
    }
    for (pTrans = (absTransaction *)ellFirst (pList);
@@ -1378,7 +1377,7 @@ LOCAL void drvAbDf1ReportTransactions (drvAbDf1Parm *pDev, ELLLIST *pList, const
       
       switch (pTrans->pIO->pFile->dataTypeClass) {
       case dtcLoopBack:
-         printf(
+         epicsPrintf(
                "\t\tloop back transaction id=%u delay=%f node=%u\n",
                pTrans->transId,
                delay,
@@ -1386,7 +1385,7 @@ LOCAL void drvAbDf1ReportTransactions (drvAbDf1Parm *pDev, ELLLIST *pList, const
          break;
 
       case dtcTyped:
-         printf(
+         epicsPrintf(
                "\t\ttyped %s transaction id=%u delay=%f node=%u file=%u\n",
                pTrans->read?"read":"write",
                pTrans->transId,
@@ -1396,7 +1395,7 @@ LOCAL void drvAbDf1ReportTransactions (drvAbDf1Parm *pDev, ELLLIST *pList, const
          break;
 
       case dtcUntyped:
-         printf(
+         epicsPrintf(
                "\t\tuntyped %s transaction id=%u delay=%f node=%u\n",
                pTrans->read?"read":"write",
                pTrans->transId,
@@ -1406,14 +1405,14 @@ LOCAL void drvAbDf1ReportTransactions (drvAbDf1Parm *pDev, ELLLIST *pList, const
 
       default:
       case dtcUnknown:
-         printf(
+         epicsPrintf(
                "\t\tunknown purpose transaction id=%u delay=%f node=%u\n",
                pTrans->transId,
                delay,
                pTrans->pIO->pFile->pPLC->nodeNo);
          break;
       }
-      printf(
+      epicsPrintf(
             "\t\t\telem=%u N elem=%u data type=\"%s\"\n",
             pTrans->pElemIO ? pTrans->pElemIO->elemNo : pTrans->pIO->elemNo,
             pTrans->pElemIO ? 1u : pTrans->pIO->elemCount,
@@ -1431,24 +1430,23 @@ LOCAL void drvAbDf1ReportPLCs (drvAbDf1Parm *pDev)
    absFileIO *pFileIO;
    epicsMutexLockStatus status;
 
-   printf ("\t\tPLC List:\n");
+   epicsPrintf ("\t\tPLC List:\n");
    status = epicsMutexLock(pDev->mutex);
    if (status != epicsMutexLockOK) {
       errPrintf(status, __FILE__, __LINE__, "Mutex lock failed");
-      printf ("\tMutex lock failed\n");
       return;
    }
    
    for (pPLC = (absPLCIO *) ellFirst (&pDev->plcIOList);
                  pPLC; pPLC = (absPLCIO *) ellNext (&pPLC->node)) {
 
-      printf(
+      epicsPrintf(
             "\t\tPLC at address %u oustanding IO count %u \n",
             pPLC->nodeNo, pPLC->ioOutstandingCount);
       for (pFileIO = (absFileIO *) ellFirst (&pPLC->fileList);
       pFileIO; pFileIO = (absFileIO *) ellNext (&pFileIO->node)) {
 
-      printf(
+      epicsPrintf(
               "\t\t\tFile %u, period %g, %s, %s\n",
                pFileIO->fileNo, pFileIO->scanPeriod,
                abDataTypeToString(pFileIO->dataType), 
@@ -1470,12 +1468,11 @@ LOCAL void drvAbDf1ReportIOBlocks (drvAbDf1Parm *pDev, ELLLIST *pList,
    epicsTimeStamp timeNow;
    unsigned i, j;
    
-   printf("\t\tIO cache list with state = \"%s\" (count=%u):\n", 
+   epicsPrintf("\t\tIO cache list with state = \"%s\" (count=%u):\n", 
             pName, ellCount(pList));
    status = epicsMutexLock(pDev->mutex);
    if (status != epicsMutexLockOK) {
       errPrintf(status, __FILE__, __LINE__, "Mutex lock failed");
-      printf ("\tMutex lock failed\n");
       return;
    }
    for (pIO = (absBlockIO *)ellFirst (pList);
@@ -1483,11 +1480,11 @@ LOCAL void drvAbDf1ReportIOBlocks (drvAbDf1Parm *pDev, ELLLIST *pList,
 
       switch (pIO->pFile->dataTypeClass) {
       case dtcLoopBack:
-         printf(
+         epicsPrintf(
             "\t\tnode=%d\n", pIO->pFile->pPLC->nodeNo);
          break;
       case dtcTyped:
-         printf(
+         epicsPrintf(
                 "\t\tnode=%d file=%u elem=%d N elem=%u data type=\"%s\"\n",
                 pIO->pFile->pPLC->nodeNo,
                 pIO->pFile->fileNo,
@@ -1496,48 +1493,35 @@ LOCAL void drvAbDf1ReportIOBlocks (drvAbDf1Parm *pDev, ELLLIST *pList,
                 abDataTypeToString(pIO->pFile->dataType));
          break;
       case dtcUntyped:
-         printf(
+         epicsPrintf(
             "\t\tnode=%d octal word no=%o n words=%u\n",
             pIO->pFile->pPLC->nodeNo,
             pIO->elemNo,
             pIO->elemCount);
          break;
       default:
-         printf ("unknown purpose");
+         epicsPrintf ("unknown purpose");
          break;
       }
-      printf(
+      epicsPrintf(
              "\t\t\tIO OP count=%u\n", pIO->ioCount);
 
       epicsTimeGetCurrent(&timeNow);
 
-#if 0
-      if (pIO->ticksAtScanCompletion==0ul) {
-         delay = 0.0;
-      }
-      else {
-         if (current >= pIO->ticksAtScanCompletion) {
-            delay = current - pIO->ticksAtScanCompletion;
-         }
-         else {
-            delay = (ULONG_MAX - pIO->ticksAtScanCompletion) + current;
-         }
-      }
-#endif
       delay = epicsTimeDiffInSeconds(&timeNow, &pIO->timeAtScanCompletion);
 
       switch (pIO->queue) {
       case absQuePending:
          delay -= pIO->pFile->scanPeriod;
 //         delay /= sysClkRateGet();
-         printf( "\t\t\tio pending %f sec\n", delay);
+         epicsPrintf( "\t\t\tio pending %f sec\n", delay);
          break;
 
       case absQueScan:
 //         delay /= sysClkRateGet();
          period = pIO->pFile->scanPeriod;
 //         period /= sysClkRateGet();
-         printf( "\t\t\tidle %f sec out of %f sec\n", delay, period);
+         epicsPrintf( "\t\t\tidle %f sec out of %f sec\n", delay, period);
          break;
 
       default:
@@ -1552,7 +1536,7 @@ LOCAL void drvAbDf1ReportIOBlocks (drvAbDf1Parm *pDev, ELLLIST *pList,
          if (errlkupStatus) {
             sprintf(buf, "Unknown error code=%x", pIO->lastReadStatus);
          }
-         printf ("\t\t\tRIO \"%s\"\n", buf);
+         epicsPrintf ("\t\t\tRIO \"%s\"\n", buf);
       }
       if (pIO->lastWriteStatus) {
          char buf[512];
@@ -1562,7 +1546,7 @@ LOCAL void drvAbDf1ReportIOBlocks (drvAbDf1Parm *pDev, ELLLIST *pList,
          if (errlkupStatus) {
             sprintf(buf, "Unknown error code=%x", pIO->lastWriteStatus);
          }
-         printf ("\t\t\tWIO \"%s\"\n", buf);
+         epicsPrintf ("\t\t\tWIO \"%s\"\n", buf);
       }
 #endif
 
@@ -1574,18 +1558,18 @@ LOCAL void drvAbDf1ReportIOBlocks (drvAbDf1Parm *pDev, ELLLIST *pList,
             if (abDataStructure(pIO->pFile->dataType)) {
                const subelementSymbol *pSym = abSubElemTable(pIO->pFile->dataType);
                
-               printf ("\t\t\telement = %4u\n", i);
+               epicsPrintf ("\t\t\telement = %4u\n", i);
                for (j=0u; j<abDataSize(pIO->pFile->dataType)/sizeof(df1Word); j++) {
                   if (pSym[j].symbol[0] == '\0') {
                      continue;
                   }
-                  printf ("\t\t\t\t%s = ", pSym[j].symbol);
+                  epicsPrintf ("\t\t\t\t%s = ", pSym[j].symbol);
                   drvAbDf1PrintElemValue (pSym[j].type, 
                            pData + abDataSize(df1DTInt)*j);
                }
             }
             else {
-               printf ("\t\t\telem =%4u value = ", i);
+               epicsPrintf ("\t\t\telem =%4u value = ", i);
                drvAbDf1PrintElemValue (pIO->pFile->effectiveDataType, pData);
             }
             pData += abDataSize(pIO->pFile->dataType);
@@ -1605,18 +1589,18 @@ LOCAL void drvAbDf1PrintElemValue (unsigned dataType, void *pDataIn)
       case df1DTInt:
       {
          epicsUInt16 *pData = (epicsUInt16 *) pDataIn;
-         printf ("0x%08x\n", *pData);
+         epicsPrintf ("0x%08x\n", *pData);
          break;
       }
       case df1DTFP:
       {
          float *pData = (float *) pDataIn;
-         printf ("%g\n", *pData);
+         epicsPrintf ("%g\n", *pData);
          break;
       }
       default:
       {
-         printf ("\n");
+         epicsPrintf ("\n");
          break;
       }
    }
@@ -1794,7 +1778,7 @@ void drvAbDf1InitiateAll(void)
     */
    if (!drvAbDf1Global.lock)
    {
-      printf("drvAbDf1 not installed\n");
+      epicsPrintf("drvAbDf1 not installed\n");
       return;
    }
 
@@ -3626,12 +3610,12 @@ LOCAL int drvAbDf1ReadNextMsgChar (FILE *fp, drvSerialResponse *pResp,
       return status;
    }
 
-{
-static int i = 0;
-printf("%02x ", nc);
-if (((i+1) % 16) == 0)
-   printf("\n");
-}
+   if(drvAbDf1Debug >= 5) {
+      static int i = 0;
+      epicsPrintf("%02x ", nc);
+      if ((++i % 16) == 0)
+         epicsPrintf("\n");
+   }
 
 
    if (pResp->bufCount>=NELEMENTS(pResp->buf)) {
@@ -3692,6 +3676,7 @@ LOCAL int drvAbDf1ExpectedDLE (FILE *fp, drvSerialResponse *pResp,
    }
    else {
       pResp->buf[pResp->bufCount++] = (char) df1dlDLE;
+      if(drvAbDf1Debug >= 5) epicsPrintf("%02x ", df1dlDLE);
    }
    return 0;
 }
@@ -3733,7 +3718,7 @@ LOCAL int drvAbDf1ExpectedETX (FILE *fp, drvSerialResponse *pResp,
    unsigned checkSum;
    int c;
 
-printf("\n");
+   if(drvAbDf1Debug >= 5) epicsPrintf("\n");
    drvAbDf1DebugPrintf (3,"<-ETX\n");
 
    /*
