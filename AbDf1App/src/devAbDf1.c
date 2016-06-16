@@ -82,6 +82,7 @@
 #include    <devLib.h>
 #include    <recGbl.h>
 #include    <epicsExport.h>
+#include    <epicsPrint.h>
 
 /*
  * DF-1 Protocol
@@ -1121,6 +1122,7 @@ LOCAL void aiDevAbDf1NewWordValue (abDf1ElemIO *pIO)
    epicsInt32                status;
    epicsUInt16         rval;
 
+
    status = (*drvFunc->ReadWord) (pIO, &rval);
    if (status == S_drvAbDf1_OK) {
       /*
@@ -1255,7 +1257,6 @@ aoDevInitRecAbDf1 (struct aoRecord *pao, int signedValue)
    epicsInt32          status;
    abDf1ElemIO  *pIO;
    ao_dev_sup   *dset;
-
    status = devAbDf1CommonInit (pao, &pao->out, OUTPUT, &pIO, NULL);
    if (status != OK) return S_devAbDf1_dontConvert;
 
@@ -1834,7 +1835,7 @@ LOCAL void boDevAbDf1CurrentWriteVal (abDf1ElemIO *pIO, abDf1Value *pVal)
 
 
 /*****************************************************************************/
-/* Device Support for Mulit-Bit Binary Input (mbbi) Records                  */
+/* Device Support for Multi-Bit Binary Input (mbbi) Records                  */
 /*****************************************************************************/
 
 mbbi_dev_sup devMbbiAbDf1 = {
@@ -1862,7 +1863,6 @@ mbbiDevInitRecAbDf1(struct mbbiRecord *pmbbi)
       abDf1ElemIO *pIO;
       epicsInt32 status;
       unsigned bitNo;
- 
       status = devAbDf1CommonInit (pmbbi, &pmbbi->inp, INPUT, &pIO, &bitNo);
       if (status != OK) return status;
 
@@ -2144,7 +2144,7 @@ void ab_test_parse (char *address)
    status = devAbParseAddress (address, &fileType, &dataType, &fileNumber,
                                &element, &subelement, &subbit, &size,
                                &structured);
-   printf ("Address = \'%s\'  Status = %x\n"
+   epicsPrintf ("Address = \'%s\'  Status = %x\n"
            "File Number = %d\n"
            "File Type = %d\n"
            "Data Type = %d\n"

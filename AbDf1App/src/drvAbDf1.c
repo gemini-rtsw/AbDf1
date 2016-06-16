@@ -1994,21 +1994,10 @@ LOCAL void drvAbDf1Scan (void *p)
          if (!pIO) {
             epicsMutexUnlock(pDev->mutex);
 
-            delay = RESPONSE_TMO/2.0;
+            //delay = RESPONSE_TMO/2.0; /* this must be a mistake */
             break;
          }
 
-#if 0
-         /*
-          * expect that overflow is possible
-          */
-         if (current >= pIO->ticksAtScanCompletion) {
-            delay = current - pIO->ticksAtScanCompletion;
-         }
-         else {
-            delay = current + (ULONG_MAX - pIO->ticksAtScanCompletion);
-         }
-#endif
          delay =  epicsTimeDiffInSeconds(&timeNow, &pIO->timeAtScanCompletion);
 
          /*
@@ -3582,6 +3571,7 @@ LOCAL int drvAbDf1ReadNextMsgChar (FILE *fp, drvSerialResponse *pResp,
 {
    int   nc;
    int status;
+   static int i = 0;
 
    nc = getc(fp);
    if (nc < 0) {
@@ -3597,6 +3587,18 @@ LOCAL int drvAbDf1ReadNextMsgChar (FILE *fp, drvSerialResponse *pResp,
          return EOF;
       }
 
+      if(drvAbDf1Debug >= 5) {
+         if(nc == df1dlDLE) {
+            epicsPrintf("%02x ", nc);
+            if ((++i % 16) == 0)
+            epicsPrintf("\n");
+          }
+          if (nc == df1dlETX) {
+             i = 0;
+            epicsPrintf("\n");
+          }
+      }
+         
       /*
        * a DLE followed by a DLE is inserted into
        * the message as a single DLE character
@@ -3610,12 +3612,6 @@ LOCAL int drvAbDf1ReadNextMsgChar (FILE *fp, drvSerialResponse *pResp,
       return status;
    }
 
-   if(drvAbDf1Debug >= 5) {
-      static int i = 0;
-      epicsPrintf("%02x ", nc);
-      if ((++i % 16) == 0)
-         epicsPrintf("\n");
-   }
 
 
    if (pResp->bufCount>=NELEMENTS(pResp->buf)) {
@@ -3630,6 +3626,12 @@ LOCAL int drvAbDf1ReadNextMsgChar (FILE *fp, drvSerialResponse *pResp,
    }
    else {
       pResp->buf[pResp->bufCount++] = (char) nc;
+
+      if(drvAbDf1Debug >= 5) {
+         epicsPrintf("%02x ", nc);
+         if ((++i % 16) == 0)
+            epicsPrintf("\n");
+      }
    }
 
    return 0;
@@ -3676,7 +3678,6 @@ LOCAL int drvAbDf1ExpectedDLE (FILE *fp, drvSerialResponse *pResp,
    }
    else {
       pResp->buf[pResp->bufCount++] = (char) df1dlDLE;
-      if(drvAbDf1Debug >= 5) epicsPrintf("%02x ", df1dlDLE);
    }
    return 0;
 }
@@ -3718,7 +3719,6 @@ LOCAL int drvAbDf1ExpectedETX (FILE *fp, drvSerialResponse *pResp,
    unsigned checkSum;
    int c;
 
-   if(drvAbDf1Debug >= 5) epicsPrintf("\n");
    drvAbDf1DebugPrintf (3,"<-ETX\n");
 
    /*
