@@ -10,6 +10,7 @@ include $(TOP)/configure/CONFIG
 
 LIBRARY_IOC += AbDf1
 
+AbDf1_LIBS += $(EPICS_BASE_IOC_LIBS)
 DBD += AbDf1.dbd
 
 # specify all source files to be compiled and added to the library
