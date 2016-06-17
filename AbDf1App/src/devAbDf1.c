@@ -52,14 +52,6 @@
 #include    <ctype.h>
 
 
-#if 0
-/*
- * VxWorks
- */
-#include    <symLib.h>
-#include    <sysSymTbl.h>
-#endif
-
 #define OK        0
 #define ERROR   (-1)
 
@@ -76,7 +68,6 @@
 #include    <devSup.h>
 #include    <dbScan.h>
 #include    <link.h>
-//#include    <module_types.h>
 #include    <menuConvert.h>
 #include    <menuScan.h>
 #include    <devLib.h>
@@ -87,18 +78,13 @@
 /*
  * DF-1 Protocol
  */
-#include    <devAbDf1.h>
-#include    <drvAbDf1.h>
-#include    <df1.h>
+#include    "devAbDf1.h"
+#include    "drvAbDf1.h"
+#include    "df1.h"
 
 /************************************************************************/
 /*  Other Symbol Definitions                                            */
 /************************************************************************/
-
-/*
- * warning reminds us to remove this 
- */
-//#define LOCAL
 
 #define S_devAbDf1_OK 0
 #define S_devAbDf1_dontConvert 2
@@ -1054,7 +1040,7 @@ aiDevReadFloatAbDf1 (struct aiRecord * pai)
       pai->val = (double) real;
       pai->udf = FALSE;
       /* AWE raise monitors */
-      db_post_events(pai, &pai->val, DBE_VALUE|DBE_LOG);
+      //db_post_events(pai, &pai->val, DBE_VALUE|DBE_LOG);
       return S_devAbDf1_dontConvert;
    }
 
@@ -1518,7 +1504,7 @@ LOCAL void aoDevAbDf1NewValue (struct aoRecord *pao, double value, epicsInt32 st
         pao->pval = value;
         pao->udf = FALSE;
         /* AWE raise monitors */
-        db_post_events(pao, &pao->val, DBE_VALUE|DBE_LOG);
+        //db_post_events(pao, &pao->val, DBE_VALUE|DBE_LOG);
    }     
    else {
         recGblSetSevr (pao, WRITE_ALARM, INVALID_ALARM);
@@ -1622,10 +1608,11 @@ LOCAL epicsInt32 biDevReadAbDf1 (struct biRecord * pbi)
 
       status = (*pIO->drvFunc->ReadBitString) (pIO, (epicsUInt16) pbi->mask, &rval);
       if (status == S_drvAbDf1_OK) {
-            pbi->rval = (epicsInt32) rval;
-       pbi->val = (epicsInt32) rval;
-       /* AWE raise monitors */
-       db_post_events(pbi, &pbi->val, DBE_VALUE|DBE_LOG);
+            pbi->rval = rval;
+            pbi->val = rval?1:0;
+            /* AWE raise monitors */
+            // 
+            //db_post_events(pbi, &pbi->val, DBE_VALUE|DBE_LOG);
       }
       else {
             recGblSetSevr(pbi,READ_ALARM,INVALID_ALARM);
@@ -1796,11 +1783,11 @@ LOCAL void boDevAbDf1NewValue (abDf1ElemIO *pIO)
       if (status == S_drvAbDf1_OK) {
             if (pbo->rval!=rval || pbo->sevr>=INVALID_ALARM) {
                   scanRequired = TRUE;
-                  pbo->rval = (epicsInt32) rval;
-                  pbo->val = pbo->rval ? 1 : 0;
+                  pbo->rval = rval;
+                  pbo->val = rval?1:0;
                   pbo->udf = FALSE;
-        /* AWE raise monitors */
-        db_post_events(pbo, &pbo->val, DBE_VALUE|DBE_LOG);
+                  /* AWE raise monitors */
+                  //db_post_events(pbo, &pbo->val, DBE_VALUE|DBE_LOG);
             }
       }
       else if (pbo->sevr<INVALID_ALARM) {

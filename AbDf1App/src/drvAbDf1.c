@@ -2175,7 +2175,6 @@ LOCAL void bitWriteReqProc (absTransaction *pTrans, abDf1ReqProto *pReq,
     */
    pReq->hdr.cmd = df1CmdProtectedBitWrite;
    pReq->hdr.dst = pTrans->pIO->pFile->pPLC->nodeNo;
-
    /* 
     * this is complicated by the fact that the masks are stored in PLC5
     * and/or mask format and is very dependent on the PLC5 bit AND op first
@@ -4121,8 +4120,10 @@ LOCAL epicsInt32 drvAbDf1QueueRequest (absTransaction *pTrans)
 
 #if 0
    (*reqJumpTable[pTrans->protoType])(pTrans, pABReq, &reqSize);
-#endif
+#else
    (*reqJumpTable[pTrans->protoType])(pTrans, &ABReq, &reqSize);
+#endif
+
 
    /*
     * check for application programmer error
@@ -5177,6 +5178,7 @@ LOCAL epicsUInt32 drvAbDf1WriteBitsRaw (absBlockIO *pIO,
          netChange = TRUE;
          pData[i] = work;
       }
+
    }
 
    /*
