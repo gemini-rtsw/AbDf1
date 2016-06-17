@@ -8,6 +8,10 @@
  * Modification Log:
  * -----------------
  * $Log: devAbDf1.c,v $
+ *
+ * Revision 2.0 2016/06/16 mdw
+ * Refactored to be EPICS OSI compliant
+ *
  * Revision 1.3  2008/02/06 23:09:15  gemvx
  * raise monitors so that channels will update in GEA
  *

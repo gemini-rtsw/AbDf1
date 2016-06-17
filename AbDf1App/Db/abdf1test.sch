@@ -2,14 +2,14 @@
 uniq 7
 [tools]
 [detail]
-w 3 83 100 0 n#1 hwin.hwin#2.in 0 80 0 80 eais.heartbeat.INP
+w 3 83 100 0 n#1 hwin.hwin#2.in 0 80 0 80 eais.ai.INP
 w 3 -173 100 0 n#2 hwin.hwin#5.in 0 -176 0 -176 ebis.bi.INP
 w 659 -253 100 0 n#3 hwout.hwout#7.outp 656 -256 656 -256 ebos.bo.OUT
 w 643 3 100 0 n#4 hwout.hwout#12.outp 640 0 640 0 eaos.ao.OUT
 w 659 -525 100 0 n#5 hwout.hwout#14.outp 656 -528 656 -528 embbos.mbbo.OUT
 w 10 -470 -100 0 n#6 hwin.hwin#16.in 0 -480 0 -480 embbis.mbbi.INP
 [cell use]
-use eais 129 -29 100 0 heartbeat
+use eais 129 -29 100 0 ai
 xform 0 128 48
 p 73 -29 100 0 -1 PV:plc:
 p 61 -51 100 0 1 DTYP:AB DF1 serial
@@ -17,7 +17,7 @@ p 63 115 100 0 1 SCAN:I/O Intr
 p 52 -72 100 0 1 LINR:NO CONVERSION
 use hwin -192 64 100 0 hwin#2
 xform 0 -96 80
-p -309 72 100 0 -1 val(in):@/dev/ttyS1 41 19
+p -309 72 100 0 -1 val(in):@/dev/ttyS1 41 101
 use ebis 124 -280 100 0 bi
 xform 0 128 -208
 p 68 -280 100 0 -1 PV:plc:

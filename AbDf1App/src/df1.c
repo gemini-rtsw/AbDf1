@@ -6,8 +6,8 @@
  * Date:    29 October 1997
  *-----------------------------------------------------------------------------
  * MODIFICATION LOG:
- * 08-Jun-2016   mdw       Separated data structure instantians out 
- *                         of df1.h into a seperate (this) source file.
+ * 08-Jun-2016   mdw       Separated data structure instantiations out 
+ *                         of df1.h into a separate (this) source file.
  * 06-Jun-2016   mdw       Modified to use <epicsTypes.h>, 
  *                         removed #include <vxWorks.h>
  * 29-Oct-97     bjo,joh   Original Release 

@@ -14,6 +14,10 @@
  *
  * Modification Log:
  * -----------------
+ *
+ *    Revision 2.0 2016/06/17 mdw
+ *    Removed vxWorks dependent code, Converted to EPICS OSI compliance
+ *
  *    Revision 1.9  1999/12/23 16:55:37  hill
  *    fixed warnings drvAbdf1.c
  *
