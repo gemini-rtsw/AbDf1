@@ -23,7 +23,7 @@ TEMPLATE_TOP=$(EPICS_BASE)/templates/makeBaseApp/top
 
 # If using the sequencer, point SNCSEQ at its top directory:
 #SNCSEQ=$(EPICS_BASE)/../modules/soft/seq
-DRVSERIAL = /gem_sw/prod/R3.14.12.4/support/drvSerial/2-0
+DRVSERIAL = /gem_sw/prod/R3.14.12.4/support/drvSerial/2-0-0
 
 # EPICS_BASE usually appears last so other apps can override stuff:
 EPICS_BASE=/gem_sw/epics/R3.14.12.4/base
