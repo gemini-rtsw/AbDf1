@@ -2965,19 +2965,15 @@ drvAbDf1ProcessResp (drvAbDf1Parm *pDev, drvSerialResponse *pResp)
          epicsStatus = Proto.hdr.sts | M_df1;
       }
 
+   if(epicsStatus) {
       if (drvAbDf1Debug>=1) {
          char buf[512];
-#if 0
-         epicsInt32 errlkupStatus;
-         errlkupStatus = errSymFind (epicsStatus, buf);
-         if (errlkupStatus) {
-            sprintf(buf, "Unknown error code=0x%x", epicsStatus);
-         }
-#endif
+ 
+         errSymLookup (epicsStatus, buf, sizeof(buf));
          drvAbDf1DebugPrintf(1,"recv cmd=%x resp from node %d w bad status \"%s\"\n", 
-            /* pProto->hdr.cmd&df1CmdMask, pProto->hdr.src, buf); */
             Proto.hdr.cmd & df1CmdMask, Proto.hdr.src, buf);
       }
+   }
 
       retireTransaction (pDev, id, epicsStatus);
       return;
