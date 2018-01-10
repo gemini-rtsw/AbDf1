@@ -20,6 +20,7 @@ AbDf1_SRCS += devAbDf1.c
 
 AbDf1_LIBS += $(EPICS_BASE_IOC_LIBS)
 
+INC += drvAbDf1.h
 #===========================
 
 include $(TOP)/configure/RULES
