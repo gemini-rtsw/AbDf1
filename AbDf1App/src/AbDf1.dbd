@@ -1,0 +1,19 @@
+# Allen Bradley DF1 Device Support
+device( ai,   INST_IO, devAiAbDf1,   "AB DF1 serial" )
+device( ao,   INST_IO, devAoAbDf1,   "AB DF1 serial" )
+device( bi,   INST_IO, devBiAbDf1,   "AB DF1 serial" )
+device( bo,   INST_IO, devBoAbDf1,   "AB DF1 serial" )
+device( mbbi, INST_IO, devMbbiAbDf1, "AB DF1 serial" )
+device( mbbo, INST_IO, devMbboAbDf1, "AB DF1 serial" )
+
+# Variables that can be set from the IOC shell
+variable(drvAbDf1SrcStationNumber, int)
+variable(drvAbDf1DefaultScanPeriod_mS, double)
+variable(drvAbDf1Debug, int)
+variable(drvAbDf1MaxOutstandingRequest, int)
+
+# Allen Bradley Driver Support
+driver(drvAbDf1)
+
+# register the IOC shell commands 
+registrar(drvAbDf1CommandsRegister)
