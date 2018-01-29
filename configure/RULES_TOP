@@ -1,4 +1,0 @@
-#RULES_TOP
-include $(CONFIG)/RULES_TOP
--include $(CONFIG)/RULES_TOP.Gem
-
