@@ -303,16 +303,6 @@ epicsUInt32 drvAbDf1SetScanPeriod (const char *pPort,
 #define RESPONSE_TMO (10.0) /*  10 sec */
 #define MUTEX_TMO (1.0 )    /*   1 sec */ 
 
-typedef struct drvAbDf1ElemIO drvAbDf1ElemIO;
-typedef struct absBlockIO absBlockIO;
-
-struct drvAbDf1ElemIO {
-   drvAbDf1ElemIO   *pNext;             /* Link to next structure (pvt to drv support) */
-   absBlockIO      *pBIO;               /* pointer to the associated IO block */
-   epicsUInt16      elemNo;             /* Desired element number (init by drv support) */
-   epicsUInt16      subElemNo;          /* Desired sub-element number (init by drv support) */
-   abDf1ElemIO      dev;
-};
 
 /*
  * convert from a device support element IO structure to 
@@ -1016,7 +1006,6 @@ LOCAL epicsUInt32 drvAbDf1WriteBlockRaw (absBlockIO *pIO, unsigned df1DT,
          unsigned typed);
 LOCAL epicsUInt32 drvAbDf1WriteBitsRaw (absBlockIO *pIO, 
          unsigned elemNo, unsigned subElemNo, epicsUInt8 *pVal, epicsUInt8 *pMask);
-LOCAL epicsInt32 drvAbDf1CreateLink (const char *pName, drvAbDf1Parm **ppDev);
 LOCAL void drvAbDf1InitiateLink (drvAbDf1Parm *pDev); /* start specified link */
 LOCAL epicsInt32 parseAbDf1Address (const char *pAddr, drvAbDf1Parm **ppDev, 
             unsigned *pNodeNumber, drvAbDf1ElemIO *pIO, unsigned *pBitNo, 
@@ -1556,9 +1545,10 @@ LOCAL void drvAbDf1PrintElemValue (unsigned dataType, void *pDataIn)
 
 /*
  * drvAbDf1CreateLink()
+ * 2018-02-09 mdw Removed static class specifier so that external device
+ *                device support modules can use it.
  */
-LOCAL epicsInt32
-drvAbDf1CreateLink (const char *pName, drvAbDf1Parm **ppLink)
+epicsInt32 drvAbDf1CreateLink (const char *pName, drvAbDf1Parm **ppLink)
 {
    drvAbDf1Parm  *pDev;
    drvAbDf1Status status;

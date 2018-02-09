@@ -168,6 +168,10 @@ typedef epicsInt32 (*devAbDf1ParseAddressFunc) (const char *address,
                                                  int *elementSize, 
                                                  int *structured);
 
+epicsInt32 drvAbDf1CreateLink(const char *pName, drvAbDf1Parm **ppDev);
+
+
+
 /* 
  * drvAbDf1NewElemIOFunc must initialize (or at least clear) 
  * all bytes in the the allocated element io structure 
@@ -248,6 +252,18 @@ struct abDf1ElemIO {
    IOSCANPVT           ioScanPvt;       /* IO event for asynch record processing (pvt to dev support)   */
    epicsUInt8          dataType;        /* Data type of PV (init by drv support)                        */
 };
+
+typedef struct drvAbDf1ElemIO drvAbDf1ElemIO;
+typedef struct absBlockIO absBlockIO;
+
+struct drvAbDf1ElemIO {
+   drvAbDf1ElemIO   *pNext;             /* Link to next structure (pvt to drv support) */
+   absBlockIO      *pBIO;               /* pointer to the associated IO block */
+   epicsUInt16      elemNo;             /* Desired element number (init by drv support) */
+   epicsUInt16      subElemNo;          /* Desired sub-element number (init by drv support) */
+   abDf1ElemIO      dev;
+};
+
 
 /*
  * FILE pointers not stored here so that we will not be
