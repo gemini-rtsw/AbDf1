@@ -18,14 +18,14 @@
 # or include statements that pull in similar RELEASE files.
 # Build settings that are NOT module paths should appear in a
 # CONFIG_SITE file.
-EPICS_RELEASE=R3.14.12.7
+EPICS_RELEASE=R3.14.12.8
 
 PROD_SUPP=/gem_sw/prod/$(EPICS_RELEASE)/support
 WORK_SUPP=/gem_sw/work/$(EPICS_RELEASE)/support
 #TEST_SUPP=/home/mrippa/work/$(EPICS_RELEASE)/support
 TEMPLATE_TOP=$(EPICS_BASE)/templates/makeBaseApp/top
 
-DRVSERIAL = $(PROD_SUPP)/drvSerial/2-0-6
+DRVSERIAL = $(PROD_SUPP)/drvSerial/2-0-7
 
 # EPICS_BASE usually appears last so other apps can override stuff:
 EPICS_BASE=/gem_sw/epics/$(EPICS_RELEASE)/base
