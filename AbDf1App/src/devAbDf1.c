@@ -1351,7 +1351,7 @@ LOCAL epicsInt32 aoDevLinearConvertAbDf1_16 (struct aoRecord *pao, int after)
 LOCAL void aoDevAbDf1WriteCompletion (abDf1ElemIO *pIO, epicsInt32 status)
 {
       struct aoRecord *pao = (struct aoRecord *) pIO->pRec;
-      struct rset *prset = (struct rset *) (pao->rset);
+      rset *prset = (rset *) (pao->rset);
 
       dbScanLock ( (struct dbCommon *) pao);
 
@@ -1366,7 +1366,7 @@ LOCAL void aoDevAbDf1WriteCompletion (abDf1ElemIO *pIO, epicsInt32 status)
       /*
        * write routine is a NOOP when PACT is true
        */
-      (*prset->process)(pao);
+      (*prset->process)( (struct dbCommon*) pao);
 
       dbScanUnlock ( (struct dbCommon *) pao);
 }
@@ -1500,7 +1500,7 @@ LOCAL void aoDevAbDf1NewFloatValue (abDf1ElemIO *pIO)
  */
 LOCAL void aoDevAbDf1NewValue (struct aoRecord *pao, double value, epicsInt32 status)
 {
-   struct rset        *prset = (struct rset *) (pao->rset);
+   rset        *prset = (rset *) (pao->rset);
 
    if (status==S_devAbDf1_OK) {
         pao->val = value;
@@ -1520,7 +1520,7 @@ LOCAL void aoDevAbDf1NewValue (struct aoRecord *pao, double value, epicsInt32 st
     * a NOOP.
     */
    pao->pact = TRUE;
-   (*prset->process) (pao);
+   (*prset->process) ( (struct dbCommon*) pao);
 }
 
 /*
@@ -1744,7 +1744,7 @@ LOCAL epicsInt32 boDevWriteAbDf1 (struct boRecord * pbo)
 LOCAL void boDevAbDf1WriteCompletion (abDf1ElemIO *pIO, epicsInt32 status)
 {
       struct boRecord *pbo = (struct boRecord *) pIO->pRec;
-      struct rset *prset = (struct rset *) (pbo->rset);
+      rset *prset = (rset *) (pbo->rset);
 
       dbScanLock ( (struct dbCommon *) pbo);
 
@@ -1759,7 +1759,7 @@ LOCAL void boDevAbDf1WriteCompletion (abDf1ElemIO *pIO, epicsInt32 status)
       /*
        * write routine is a NOOP when PACT is true
        */
-      (*prset->process)(pbo);
+      (*prset->process)( (struct dbCommon*) pbo);
 
       dbScanUnlock ( (struct dbCommon *) pbo);
 }
@@ -1770,7 +1770,7 @@ LOCAL void boDevAbDf1WriteCompletion (abDf1ElemIO *pIO, epicsInt32 status)
 LOCAL void boDevAbDf1NewValue (abDf1ElemIO *pIO)
 {
       struct boRecord *pbo = (struct boRecord *) pIO->pRec;
-      struct rset *prset = (struct rset *) (pbo->rset);
+      rset *prset = (rset *) (pbo->rset);
       unsigned scanRequired = FALSE;
       epicsInt32 status = S_devAbDf1_OK;
       epicsUInt16 rval;
@@ -1807,7 +1807,7 @@ LOCAL void boDevAbDf1NewValue (abDf1ElemIO *pIO)
              * a NOOP.
              */
             pbo->pact = TRUE;
-            (*prset->process) (pbo);
+            (*prset->process) ( (struct dbCommon*) pbo);
       }
 
       dbScanUnlock ( (struct dbCommon *) pbo);
@@ -2022,7 +2022,7 @@ LOCAL epicsInt32 mbboDevWriteAbDf1 (struct mbboRecord *pmbbo)
 LOCAL void mbboDevAbDf1WriteCompletion (abDf1ElemIO *pIO, epicsInt32 status)
 {
       struct mbboRecord *pmbbo = (struct mbboRecord *) pIO->pRec;
-      struct rset *prset = (struct rset *) (pmbbo->rset);
+      rset *prset = (rset *) (pmbbo->rset);
 
       dbScanLock ( (struct dbCommon *) pmbbo);
 
@@ -2037,7 +2037,7 @@ LOCAL void mbboDevAbDf1WriteCompletion (abDf1ElemIO *pIO, epicsInt32 status)
       /*
        * write routine is a NOOP when PACT is true
        */
-      (*prset->process)(pmbbo);
+      (*prset->process)( (struct dbCommon*) pmbbo);
 
       dbScanUnlock ( (struct dbCommon *) pmbbo);
 }
@@ -2048,7 +2048,7 @@ LOCAL void mbboDevAbDf1WriteCompletion (abDf1ElemIO *pIO, epicsInt32 status)
 LOCAL void mbboDevAbDf1NewValue (abDf1ElemIO *pIO)
 {
       struct mbboRecord *pmbbo = (struct mbboRecord *) pIO->pRec;
-      struct rset *prset = (struct rset *) (pmbbo->rset);
+      rset *prset = (rset *) (pmbbo->rset);
       unsigned scanRequired = FALSE;
       epicsInt32 status = S_devAbDf1_OK;
       epicsUInt16 rval;
@@ -2105,7 +2105,7 @@ LOCAL void mbboDevAbDf1NewValue (abDf1ElemIO *pIO)
              * a NOOP.
              */
             pmbbo->pact = TRUE;
-            (*prset->process) (pmbbo);
+            (*prset->process) ( (struct dbCommon*) pmbbo);
       }
 
       dbScanUnlock ( (struct dbCommon *) pmbbo);

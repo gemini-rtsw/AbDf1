@@ -961,11 +961,7 @@ typedef epicsInt32    drvInitFunc_t (void);
 typedef epicsInt32    drvReportFunc_t (int level);
 LOCAL long drvAbDf1Report(int);
 LOCAL long drvAbDf1Init();
-struct {
-   long         number;
-   DRVSUPFUN    report;
-   DRVSUPFUN    init;
-}               drvAbDf1 =
+drvet drvAbDf1 =
 {
    2,
    drvAbDf1Report,
