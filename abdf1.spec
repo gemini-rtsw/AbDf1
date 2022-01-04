@@ -24,7 +24,7 @@ Source0: %{name}-%{version}.tar.gz
 ExclusiveArch: %{arch}
 Prefix: %{_prefix}
 ## You may specify dependencies here
-BuildRequires: epics-base-devel re2c gemini-ade drvSerial
+BuildRequires: epics-base-devel re2c gemini-ade drvSerial drvSerial-devel
 Requires: epics-base drvSerial
 ## Switch dependency checking off
 # AutoReqProv: no
