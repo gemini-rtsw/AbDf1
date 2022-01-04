@@ -10,8 +10,6 @@
 # Getting 'strip' to work is probably only needed for
 # building a related debug sub-package
 #
-# But this prevents all the strip warnings
-# mrippa 20120202
 %global _enable_debug_package 0
 %global debug_package %{nil}
 %global __os_install_post /usr/lib/rpm/brp-compress %{nil}
@@ -83,6 +81,6 @@ rm -rf $RPM_BUILD_ROOT
    /%{_prefix}/%{name}/configure
 
 %changelog
-* Tue January 4 2022 framos <francisco.ramos@noirlab.edu> 
+* Tue Jan 4 2022 framos <francisco.ramos@noirlab.edu>  9fecdaa447d0492d5147c46fd4e868b80446e85f
 - Epics 7 migration. 
 
