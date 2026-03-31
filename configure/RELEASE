@@ -18,14 +18,12 @@
 # or include statements that pull in similar RELEASE files.
 # Build settings that are NOT module paths should appear in a
 # CONFIG_SITE file.
-EPICS_BASE=/gem_base/epics/epics-base
-
-PROD_SUPP=/gem_base/epics/support
 TEMPLATE_TOP=$(EPICS_BASE)/templates/makeBaseApp/top
 
-DRVSERIAL = $(PROD_SUPP)/drvSerial/
+DRVSERIAL=$(SUPPORT)/drvSerial
 
 # EPICS_BASE usually appears last so other apps can override stuff:
+EPICS_BASE=/gem_base/epics/epics-base
 
 # Set RULES here if you want to take build rules from somewhere
 # other than EPICS_BASE:
