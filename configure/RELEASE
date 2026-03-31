@@ -23,6 +23,7 @@ TEMPLATE_TOP=$(EPICS_BASE)/templates/makeBaseApp/top
 DRVSERIAL=$(SUPPORT)/drvSerial
 
 # EPICS_BASE usually appears last so other apps can override stuff:
+SUPPORT=/gem_base/epics/support
 EPICS_BASE=/gem_base/epics/epics-base
 
 # Set RULES here if you want to take build rules from somewhere
