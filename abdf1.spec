@@ -24,8 +24,9 @@ Source0: %{name}-%{version}.tar.gz
 ExclusiveArch: %{arch}
 Prefix: %{_prefix}
 ## You may specify dependencies here
-BuildRequires: epics-base-devel re2c gemini-ade drvSerial drvSerial-devel
-Requires: epics-base drvSerial
+## epics-base-devel pinned exactly; other entries are build tools / support deps.
+BuildRequires: epics-base-devel = 7.0.7-0.git.16f5056.el8 re2c gemini-ade drvSerial drvSerial-devel
+## (runtime Requires removed: cross-compiled VME/build-only artifact, never runs on host)
 ## Switch dependency checking off
 # AutoReqProv: no
 
