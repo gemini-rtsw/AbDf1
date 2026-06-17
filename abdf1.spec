@@ -25,7 +25,7 @@ ExclusiveArch: %{arch}
 Prefix: %{_prefix}
 ## You may specify dependencies here
 ## epics-base-devel pinned exactly; other entries are build tools / support deps.
-BuildRequires: epics-base-devel = 7.0.7-0.git.1159d86%{?dist} re2c gemini-ade drvSerial drvSerial-devel
+BuildRequires: epics-base-devel = 7.0.7-0.git.bb87399%{?dist} re2c gemini-ade drvSerial drvSerial-devel
 ## (runtime Requires removed: cross-compiled VME/build-only artifact, never runs on host)
 ## Switch dependency checking off
 # AutoReqProv: no
